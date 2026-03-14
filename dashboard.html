@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Juwi: Judge Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px;
+            background: #f4f4f9;
+        }
+
+        .dashboard {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .status {
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .recording {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .idle {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .transcript-box {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            min-height: 150px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        #stopBtn {
+            background: #dc3545;
+        }
+
+        #stopBtn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard">
+        <h2>🎙️ Juwi: Live Pitch Audit</h2>
+
+        <button id="startBtn">🔴 Start Listening</button>
+        <button id="stopBtn" style="display:none;">⏹ Stop Pitch</button>
+
+        <div id="statusIndicator" class="status idle">Status: Waiting for Pitch...</div>
+
+        <h3>Live Extracted Tech Stack:</h3>
+        <div id="techStackOutput" class="transcript-box">Awaiting data...</div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioContext;
+        let analyser;
+        let microphone;
+
+        let isRecordingSession = false;
+        let isSpeaking = false;
+        let silenceTimer = null;
+        let chunkStartTime = 0;
+
+        const SILENCE_THRESHOLD = 15;
+        const SILENCE_DURATION = 1500;
+        const MIN_CHUNK_TIME = 15000; // Minimum 15 seconds of context before cutting
+
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const techStackOutput = document.getElementById('techStackOutput');
+
+        async function setupAudio() {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            microphone = audioContext.createMediaStreamSource(stream);
+            microphone.connect(analyser);
+
+            analyser.fftSize = 512;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            // Track when this specific chunk started recording
+            mediaRecorder.onstart = () => {
+                chunkStartTime = Date.now();
+            };
+
+            mediaRecorder.ondataavailable = event => {
+                if (event.data.size > 0) audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = async () => {
+                if (audioChunks.length === 0) return;
+
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                audioChunks = [];
+
+                if (isRecordingSession) {
+                    mediaRecorder.start(); // Instantly start next chunk
+                }
+
+                sendToFastAPI(audioBlob);
+            };
+
+            function checkSilence() {
+                if (!isRecordingSession) return;
+
+                analyser.getByteFrequencyData(dataArray);
+                let sum = dataArray.reduce((a, b) => a + b, 0);
+                let averageVolume = sum / bufferLength;
+
+                if (averageVolume > SILENCE_THRESHOLD) {
+                    if (!isSpeaking) {
+                        isSpeaking = true;
+                        statusIndicator.innerText = "Status: 🗣️ Student is speaking...";
+                        statusIndicator.className = "status recording";
+                        if (mediaRecorder.state === 'inactive') mediaRecorder.start();
+                    }
+                    clearTimeout(silenceTimer);
+                } else {
+                    if (isSpeaking) {
+                        silenceTimer = setTimeout(() => {
+                            let timeElapsed = Date.now() - chunkStartTime;
+
+                            if (timeElapsed > MIN_CHUNK_TIME) {
+                                // Chunk is over 15s AND they paused. Cut it!
+                                isSpeaking = false;
+                                statusIndicator.innerText = "Status: ⏸️ Processing audio block...";
+                                statusIndicator.className = "status idle";
+                                if (mediaRecorder.state === 'recording') mediaRecorder.stop();
+                            }
+                        }, SILENCE_DURATION);
+                    }
+                }
+                requestAnimationFrame(checkSilence);
+            }
+
+            checkSilence();
+        }
+
+        async function sendToFastAPI(audioBlob) {
+            const formData = new FormData();
+            formData.append("file", audioBlob, "chunk.wav");
+
+            try {
+                const response = await fetch("http://127.0.0.1:8000/process-audio", {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await response.json();
+
+                console.log("Whisper Heard:", data.transcript);
+                console.log("Juwi Extracted:", data); // Check your browser console to see the JSON!
+
+                if (data.status === "success") {
+                    // 1. Print Tech Stack
+                    if (data.tech_stack && data.tech_stack.length > 0) {
+                        techStackOutput.innerText += `\n🛠️ [Tech]: ${data.tech_stack.join(', ')}`;
+                    }
+
+                    // 2. Print Verified Claims with Emojis and Prompts
+                    if (data.verified_claims && data.verified_claims.length > 0) {
+                        data.verified_claims.forEach(vc => {
+                            // Pick the right emoji based on Qwen's verdict
+                            let icon = vc.verdict === 'TRUE' ? '✅' : (vc.verdict === 'FALSE' ? '❌' : '⚠️');
+
+                            techStackOutput.innerText += `\n\n${icon} [${vc.verdict}] Claim: "${vc.claim}"`;
+                            techStackOutput.innerText += `\n   ↳ 🎙️ Judge Prompt: ${vc.explanation}`;
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Frontend Error:", error);
+                techStackOutput.innerText += `\n[UI Error]: Could not parse the data.`;
+            }
+        }
+
+        startBtn.addEventListener('click', async () => {
+            isRecordingSession = true;
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-block';
+            await setupAudio();
+        });
+
+        stopBtn.addEventListener('click', () => {
+            isRecordingSession = false;
+            isSpeaking = false;
+            startBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'none';
+            statusIndicator.innerText = "Status: Pitch Stopped. Processing final chunk.";
+            statusIndicator.className = "status idle";
+
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+        });
+    </script>
+</body>
+
+</html>

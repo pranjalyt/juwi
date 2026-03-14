@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Juwi — Sponsor Talent Scout</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <style>
+    .sponsor-hero {
+      background: linear-gradient(135deg, #1c1c1e 0%, #2d2420 100%);
+      border-radius: var(--radius-lg);
+      padding: 52px 40px; color: white; margin-bottom: 40px;
+      position: relative; overflow: hidden;
+    }
+    .sponsor-hero::before {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(212,168,83,.2) 0%, transparent 70%);
+    }
+    .sponsor-hero > * { position: relative; z-index: 1; }
+    .sponsor-hero h1 { color: #D4A853; }
+    .sponsor-hero p  { color: rgba(255,255,255,.65); margin-top: 10px; font-size: 1rem; }
+    .sponsor-hero .tagline {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(212,168,83,.15); border: 1px solid rgba(212,168,83,.3);
+      padding: 6px 16px; border-radius: 99px;
+      font-size: .75rem; color: #D4A853; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .filters {
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 20px;
+    }
+
+    /* Student card for mobile / detail view */
+    .talent-card {
+      background: var(--surface); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 24px;
+      border-left: 4px solid var(--accent-3);
+    }
+    .talent-card h4 { margin-bottom: 6px; }
+    .talent-card .skill-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .skill-pill {
+      background: var(--surface-2); border-radius: 99px;
+      padding: 3px 12px; font-size: .75rem; font-weight: 600; color: var(--text-2);
+    }
+
+    .complexity-bar-wrap { display: flex; align-items: center; gap: 10px; }
+    .complexity-blocks { display: flex; gap: 4px; }
+    .block {
+      width: 14px; height: 14px; border-radius: 3px;
+      background: var(--border);
+    }
+    .block.filled { background: var(--accent-3); }
+
+    /* Bookmark */
+    .bookmark-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 1.25rem; transition: transform .2s;
+      padding: 4px 8px;
+    }
+    .bookmark-btn:hover { transform: scale(1.2); }
+
+    /* Detail panel */
+    .detail-panel {
+      background: var(--surface); border-radius: var(--radius);
+      box-shadow: var(--shadow-lg); padding: 32px;
+      position: sticky; top: 80px;
+    }
+
+    .sponsor-layout { display: grid; grid-template-columns: 1fr 360px; gap: 28px; align-items: flex-start; }
+    @media(max-width:900px){ .sponsor-layout{ grid-template-columns: 1fr; } .detail-panel{ position:static; } }
+
+    .rank-num {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--surface-2);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: .9rem; color: var(--text-2);
+      flex-shrink: 0;
+    }
+    .rank-num.top { background: #D4A853; color: white; }
+
+    .interest-btn {
+      background: rgba(193,123,92,.1);
+      border: 1.5px solid rgba(193,123,92,.3);
+      color: var(--accent); border-radius: var(--radius-sm);
+      padding: 8px 18px; font-weight: 600; font-size: .85rem;
+      cursor: pointer; transition: all .2s;
+    }
+    .interest-btn:hover {
+      background: var(--accent); color: white;
+    }
+    .interest-btn.active {
+      background: var(--accent); color: white;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="nav-brand" style="text-decoration:none;">
+    <div class="dot-logo">J</div>
+    Juwi<span>.</span>
+  </a>
+  <div class="nav-links">
+    <span class="badge badge-accent"><i class="ti ti-lock"></i> B2B Confidential</span>
+    <a href="index.html" class="btn btn-ghost btn-sm">← Home</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <!-- Sponsor Hero -->
+  <div class="sponsor-hero reveal">
+    <div class="tagline"><i class="ti ti-diamond"></i> Sponsor Exclusive</div>
+    <h1>Talent Scout Dashboard</h1>
+    <p>Discover hidden gems — students ranked by real code complexity &amp; tech depth, not just who won the trophy.</p>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:24px;">
+      <div style="text-align:center;">
+        <div style="font-size:2rem;font-weight:800;color:#D4A853;" id="totalCandidates">—</div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em;">Candidates</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:2rem;font-weight:800;color:#5FAD8A;" id="topTier">—</div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em;">Top Tier</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:2rem;font-weight:800;color:#C17B5C;" id="bookmarked">0</div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em;">Bookmarked</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sponsor-layout">
+    <!-- LEFT: Talent Table -->
+    <div>
+      <div class="filters">
+        <input type="text" class="form-control" id="searchInput" placeholder="Search by name, tech, college…" style="flex:1;min-width:180px;" oninput="filterTable()">
+        <select class="form-control" id="stackFilter" style="width:auto;" onchange="filterTable()">
+          <option value="">All Stacks</option>
+          <option value="python">Python / AI/ML</option>
+          <option value="js">JavaScript / Frontend</option>
+          <option value="backend">Backend / Systems</option>
+          <option value="mobile">Mobile</option>
+        </select>
+        <div class="tab-bar" id="tierFilter">
+          <div class="tab-item active" data-tier="all">All</div>
+          <div class="tab-item" data-tier="elite"><i class="ti ti-trophy"></i> Elite</div>
+          <div class="tab-item" data-tier="strong"><i class="ti ti-star"></i> Strong</div>
+          <div class="tab-item" data-tier="rising"><i class="ti ti-trending-up"></i> Rising</div>
+        </div>
+      </div>
+
+      <div class="table-wrap reveal">
+        <table id="talentTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>College</th>
+              <th>Primary Stack</th>
+              <th>Code Complexity</th>
+              <th>Tier</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="talentBody">
+            <!-- Filled by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RIGHT: Detail Panel -->
+    <div>
+      <div class="detail-panel reveal reveal-delay-1" id="detailPanel">
+        <div style="text-align:center;padding:40px 20px;color:var(--text-3);">
+          <div style="font-size:2rem;margin-bottom:12px;color:var(--text-3);"><i class="ti ti-hand-finger"></i></div>
+          <p style="font-size:.9rem;">Click a candidate to view their full talent profile.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="sponsor.js"></script>
+</body>
+</html>
