@@ -4,14 +4,14 @@
 
 // ── Palette definitions ───────────────────────────────────────
 const PALETTES = {
-  warm:     { from: '#C17B5C', to: '#D4A853', text: '#fff' },
-  ocean:    { from: '#5C7BC1', to: '#5FAD8A', text: '#fff' },
+  warm: { from: '#C17B5C', to: '#D4A853', text: '#fff' },
+  ocean: { from: '#5C7BC1', to: '#5FAD8A', text: '#fff' },
   midnight: { from: '#1c1c1e', to: '#5C7BC1', text: '#fff' },
-  rose:     { from: '#C15C8A', to: '#D4A853', text: '#fff' },
-  forest:   { from: '#4A7C59', to: '#A3B899', text: '#fff' },
+  rose: { from: '#C15C8A', to: '#D4A853', text: '#fff' },
+  forest: { from: '#4A7C59', to: '#A3B899', text: '#fff' },
 };
 
-const CHART_COLORS = ['#C17B5C','#D4A853','#7B9E87','#5C7BC1','#C15C8A'];
+const CHART_COLORS = ['#C17B5C', '#D4A853', '#7B9E87', '#5C7BC1', '#C15C8A'];
 
 // ── Toast ─────────────────────────────────────────────────────
 function toast(msg, type = 'default') {
@@ -19,7 +19,7 @@ function toast(msg, type = 'default') {
   const el = document.createElement('div');
   el.className = 'toast';
   if (type === 'success') el.style.background = 'var(--success)';
-  if (type === 'danger')  el.style.background = 'var(--danger)';
+  if (type === 'danger') el.style.background = 'var(--danger)';
   el.textContent = msg;
   c.appendChild(el);
   setTimeout(() => { el.classList.add('removing'); setTimeout(() => el.remove(), 300); }, 3800);
@@ -27,18 +27,18 @@ function toast(msg, type = 'default') {
 
 // ── Confetti ──────────────────────────────────────────────────
 function fireConfetti() {
-  const colors = ['#C17B5C','#D4A853','#7B9E87','#5C7BC1','#C15C8A','#fff','#D4A853'];
+  const colors = ['#C17B5C', '#D4A853', '#7B9E87', '#5C7BC1', '#C15C8A', '#fff', '#D4A853'];
   for (let i = 0; i < 80; i++) {
     const el = document.createElement('div');
     el.className = 'confetti-particle';
     el.style.cssText = `
-      left: ${Math.random()*100}vw;
-      width: ${Math.random()*10+6}px;
-      height: ${Math.random()*10+6}px;
-      background: ${colors[Math.floor(Math.random()*colors.length)]};
-      animation-duration: ${Math.random()*2+2.5}s;
-      animation-delay: ${Math.random()*1.2}s;
-      opacity: ${Math.random()*.6+.4};
+      left: ${Math.random() * 100}vw;
+      width: ${Math.random() * 10 + 6}px;
+      height: ${Math.random() * 10 + 6}px;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      animation-duration: ${Math.random() * 2 + 2.5}s;
+      animation-delay: ${Math.random() * 1.2}s;
+      opacity: ${Math.random() * .6 + .4};
     `;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 5000);
@@ -46,23 +46,23 @@ function fireConfetti() {
 }
 
 // ── State ─────────────────────────────────────────────────────
-let currentStep = 1;
+let ALL_RESULTS = []; // Store the DB globally for the dropdown
 const formData = {};
 
-// ── Main router ───────────────────────────────────────────────
-function init() {
-  const submitted = localStorage.getItem('juwi_student_submission');
-  const unlock    = localStorage.getItem('juwi_unlock');
-  const isUnlocked = unlock && new Date(unlock) <= new Date();
+// // ── Main router ───────────────────────────────────────────────
+// function init() {
+//   const submitted = localStorage.getItem('juwi_student_submission');
+//   const unlock = localStorage.getItem('juwi_unlock');
+//   const isUnlocked = unlock && new Date(unlock) <= new Date();
 
-  if (isUnlocked && submitted) {
-    renderResults(JSON.parse(submitted));
-  } else if (submitted) {
-    renderLockedState(unlock);
-  } else {
-    renderForm();
-  }
-}
+//   if (isUnlocked && submitted) {
+//     renderResults(JSON.parse(submitted));
+//   } else if (submitted) {
+//     renderLockedState(unlock);
+//   } else {
+//     renderForm();
+//   }
+// }
 
 // ── SUBMISSION FORM ───────────────────────────────────────────
 function renderForm() {
@@ -157,25 +157,25 @@ function renderForm() {
 function goStep(n) {
   if (n === 2) {
     if (!document.getElementById('f-name').value.trim() ||
-        !document.getElementById('f-team').value.trim() ||
-        !document.getElementById('f-college').value.trim()) {
+      !document.getElementById('f-team').value.trim() ||
+      !document.getElementById('f-college').value.trim()) {
       toast('Please fill in all team info fields.', 'danger'); return;
     }
-    formData.name    = document.getElementById('f-name').value.trim();
-    formData.team    = document.getElementById('f-team').value.trim();
+    formData.name = document.getElementById('f-name').value.trim();
+    formData.team = document.getElementById('f-team').value.trim();
     formData.college = document.getElementById('f-college').value.trim();
-    formData.email   = document.getElementById('f-email').value.trim();
+    formData.email = document.getElementById('f-email').value.trim();
     formData.members = document.getElementById('f-members').value.trim();
   }
   if (n === 3) {
     if (!document.getElementById('f-title').value.trim() ||
-        !document.getElementById('f-github').value.trim() ||
-        !document.getElementById('f-abstract').value.trim()) {
+      !document.getElementById('f-github').value.trim() ||
+      !document.getElementById('f-abstract').value.trim()) {
       toast('Please complete all project fields.', 'danger'); return;
     }
-    formData.title    = document.getElementById('f-title').value.trim();
-    formData.github   = document.getElementById('f-github').value.trim();
-    formData.stack    = document.getElementById('f-stack').value.trim();
+    formData.title = document.getElementById('f-title').value.trim();
+    formData.github = document.getElementById('f-github').value.trim();
+    formData.stack = document.getElementById('f-stack').value.trim();
     formData.abstract = document.getElementById('f-abstract').value.trim();
     // Build review
     document.getElementById('review-summary').innerHTML = `
@@ -207,7 +207,7 @@ function goStep(n) {
   document.querySelectorAll('[id^="step-"]').forEach(el => el.style.display = 'none');
   document.getElementById(`step-${n}`).style.display = 'block';
   // Update step bar
-  ['s1','s2','s3'].forEach((id, i) => {
+  ['s1', 's2', 's3'].forEach((id, i) => {
     const el = document.getElementById(id);
     if (!el) return;
     el.className = 'step ' + (i + 1 < n ? 'done' : i + 1 === n ? 'active' : '');
@@ -215,7 +215,7 @@ function goStep(n) {
 }
 
 function handleDrag(e, zone) { e.preventDefault(); document.getElementById(zone).classList.add('dragover'); }
-function clearDrag(zone)      { document.getElementById(zone).classList.remove('dragover'); }
+function clearDrag(zone) { document.getElementById(zone).classList.remove('dragover'); }
 function handleDrop(e, zone, inputId) {
   e.preventDefault(); clearDrag(zone);
   const input = document.getElementById(inputId);
@@ -223,71 +223,156 @@ function handleDrop(e, zone, inputId) {
 }
 function fileSelected(zone, input) {
   const zone_el = document.getElementById(zone);
-  zone_el.innerHTML = `<div class="upload-icon"><i class="ti ti-circle-check" style="color:var(--success);"></i></div><p><strong>${input.files[0].name}</strong></p><p>${(input.files[0].size/1024/1024).toFixed(2)} MB</p>`;
+  zone_el.innerHTML = `<div class="upload-icon"><i class="ti ti-circle-check" style="color:var(--success);"></i></div><p><strong>${input.files[0].name}</strong></p><p>${(input.files[0].size / 1024 / 1024).toFixed(2)} MB</p>`;
 }
 
-function submitForm() {
+async function submitForm() {
   if (!document.getElementById('f-terms').checked) {
     toast('Please accept the declaration.', 'danger'); return;
   }
-  const btn = event.target;
-  btn.textContent = 'Submitting…'; btn.disabled = true;
 
-  // Mock API call
-  setTimeout(() => {
-    const submission = {
-      ...formData,
-      submittedAt: new Date().toISOString(),
-      // Mock scores from a "judge" for demo:
-      scores: { Innovation: 8, 'Technical Depth': 7, 'Code Quality': 9, Presentation: 8, 'UI/UX Design': 7 },
-      total: 39, maxTotal: 50,
-      rank: '2nd',
-      remarks: 'Outstanding technical execution. The codebase showed real depth. Some edge cases in the API remain unhandled but the core product is extremely solid.',
-      pros: '• Clean, modular codebase\n• Real-world problem with massive impact\n• Strong demo with live data',
-      cons: '• Missing error boundaries\n• Scalability not addressed beyond MVP\n• Accuracy metric not independently verified',
-      improvement: 'Focus on writing comprehensive test coverage and deploying to a real environment before the next hackathon. The product vision is strong — the execution just needs hardening.',
-    };
-    localStorage.setItem('juwi_student_submission', JSON.stringify(submission));
+  // Grab the button and put it in a loading state
+  const btn = event.target;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="ti ti-loader" style="animation: spin 1s linear infinite;"></i> AI is Triaging...';
+  btn.disabled = true;
+
+  // 1. Package the data EXACTLY how Python's Pydantic model expects it
+  const payload = {
+    id: Math.floor(Math.random() * 100000),
+    name: formData.team || "Unknown Team",          // Fallback prevents 422
+    college: formData.college || "Unknown College", // Fallback prevents 422
+    description: formData.abstract || "No description provided.", // Fallback
+    stack: formData.stack || "Not specified",       // Fallback
+    github: formData.github || ""
+  };
+
+  console.log("🚀 SENDING PAYLOAD:", payload); // Let's log it just to be safe!
+
+  try {
+    // 2. Send it to your FastAPI backend
+    const response = await fetch("http://127.0.0.1:8000/api/triage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    // Inject the spinning animation CSS safely if it doesn't exist
+    if (!document.getElementById('spin-style')) {
+      const style = document.createElement('style');
+      style.id = 'spin-style';
+      style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
+      document.head.appendChild(style);
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.status === "success") {
+      // Save local state for lock screen
+      const submission = {
+        ...formData,
+        submittedAt: new Date().toISOString(),
+      };
+      localStorage.setItem('juwi_student_submission', JSON.stringify(submission));
+
+      // 3. Show Success Screen
+      document.getElementById('mainWrap').innerHTML = `
+        <div class="submit-success reveal">
+          <div style="font-size:3rem;margin-bottom:20px;color:var(--accent);"><i class="ti ti-rocket"></i></div>
+          <h2 style="margin-bottom:12px;">Project Submitted!</h2>
+          <p style="max-width:400px;margin-inline:auto;">Your project was received and evaluated by the AI Judge. Score: <strong style="color:var(--accent);">${data.team.score}</strong></p>
+          <div style="margin-top:32px;background:var(--surface-2);border-radius:var(--radius-sm);padding:20px;max-width:360px;margin-inline:auto;">
+            <p style="font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">Submission ID</p>
+            <code style="font-size:1.1rem;color:var(--accent);font-weight:700;">#JW-${payload.id}</code>
+          </div>
+          <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="init()">View Live Status</button>
+          </div>
+        </div>
+      `;
+      toast('AI Triage Complete!', 'success');
+
+    } else {
+      throw new Error(data.message || "Backend failed to triage.");
+    }
+  } catch (err) {
+    console.error("Submission Error:", err);
+    toast('Error: Could not process submission. Check console.', 'danger');
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+}
+
+// ── Main router & DB Fetcher ──────────────────────────────────
+async function init() {
+  const submittedStr = localStorage.getItem('juwi_student_submission');
+  const unlockISO = localStorage.getItem('juwi_unlock');
+  const isUnlocked = unlockISO && new Date(unlockISO) <= new Date();
+
+  if (isUnlocked) {
+    // 1. Put UI in loading state
     document.getElementById('mainWrap').innerHTML = `
-      <div class="submit-success reveal">
-        <div style="font-size:3rem;margin-bottom:20px;color:var(--accent);"><i class="ti ti-rocket"></i></div>
-        <h2 style="margin-bottom:12px;">Project Submitted!</h2>
-        <p style="max-width:400px;margin-inline:auto;">Your project has been received. Results will unlock at the scheduled time — check back here!</p>
-        <div style="margin-top:32px;background:var(--surface-2);border-radius:var(--radius-sm);padding:20px;max-width:360px;margin-inline:auto;">
-          <p style="font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">Submission ID</p>
-          <code style="font-size:1.1rem;color:var(--accent);font-weight:700;">#JW-${Math.random().toString(36).substr(2,8).toUpperCase()}</code>
-        </div>
-        <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="init()">View Results Dashboard</button>
-        </div>
+      <div style="text-align:center; padding: 80px 20px;">
+        <i class="ti ti-loader" style="animation: spin 1s linear infinite; font-size: 3rem; color: var(--accent); margin-bottom: 20px; display: inline-block;"></i>
+        <h2>Decrypting Global Results...</h2>
       </div>
     `;
-  }, 1800);
+
+    // 2. Fetch ALL teams from Python SQLite
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/admin/teams");
+      const data = await res.json();
+
+      if (data.status === "success") {
+        ALL_RESULTS = data.teams;
+
+        // Read the Phase Toggle from the Admin Panel
+        const currentPhase = parseInt(localStorage.getItem('juwi_phase') || '1');
+
+        if (currentPhase === 2) {
+          renderPhase2Results();
+        } else {
+          renderPhase1Results();
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch results", err);
+      toast("Error: Could not reach Juwi backend.", "danger");
+    }
+  } else if (submittedStr) {
+    renderLockedState(unlockISO);
+  } else {
+    renderForm();
+  }
 }
 
 // ── LOCKED STATE ──────────────────────────────────────────────
 function renderLockedState(unlockISO) {
   const unlockDate = unlockISO ? new Date(unlockISO) : null;
-  document.getElementById('statusBadge').textContent = 'Submission Received';
-  document.getElementById('statusBadge').className   = 'badge badge-warning';
+  document.getElementById('statusBadge').textContent = 'Judging in Progress';
+  document.getElementById('statusBadge').className = 'badge badge-warning';
   document.getElementById('mainWrap').innerHTML = `
     <div class="locked-overlay">
       <div class="lock-icon"><i class="ti ti-lock"></i></div>
       <div>
         <h2 class="mb-8">Your Submission is In!</h2>
-        <p style="max-width:440px;margin-inline:auto;">Results will go live at the scheduled time. The judges are hard at work. Come back when the countdown hits zero!</p>
+        <p style="max-width:440px;margin-inline:auto;">The Judges and the AI are currently reviewing the repositories. Come back when the countdown hits zero to view the Global Leaderboard!</p>
       </div>
       ${unlockDate ? `
-        <div class="card text-center" style="padding:32px 48px;">
+        <div class="card text-center" style="padding:32px 48px; margin-top: 20px;">
           <p style="font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">Results Unlock In</p>
           <div class="countdown-display" id="countdown">
             <div class="countdown-unit"><span class="countdown-number" id="cd-h">--</span><span class="countdown-label">Hours</span></div>
             <div class="countdown-unit"><span class="countdown-number" id="cd-m">--</span><span class="countdown-label">Mins</span></div>
             <div class="countdown-unit"><span class="countdown-number" id="cd-s">--</span><span class="countdown-label">Secs</span></div>
           </div>
-          <p style="font-size:.8rem;color:var(--text-3);">${unlockDate.toLocaleString()}</p>
         </div>
-      ` : `<p style="color:var(--text-3);">Unlock time not yet set by admin.</p>`}
+      ` : `<p style="color:var(--text-3); margin-top: 20px;">Unlock time not yet set by admin.</p>`}
+      <button class="btn btn-outline btn-sm" style="margin-top: 30px;" onclick="resetStudent()">Submit Another Project</button>
     </div>
   `;
   if (unlockDate) startCountdown(unlockDate);
@@ -300,7 +385,7 @@ function startCountdown(target) {
     const h = Math.floor(diff / 3600000);
     const m = Math.floor((diff % 3600000) / 60000);
     const s = Math.floor((diff % 60000) / 1000);
-    const fmt = n => String(n).padStart(2,'0');
+    const fmt = n => String(n).padStart(2, '0');
     const hEl = document.getElementById('cd-h');
     const mEl = document.getElementById('cd-m');
     const sEl = document.getElementById('cd-s');
@@ -312,91 +397,212 @@ function startCountdown(target) {
   tick();
 }
 
-// ── RESULTS ───────────────────────────────────────────────────
-function renderResults(sub) {
-  const pal = PALETTES[localStorage.getItem('juwi_palette') || 'warm'];
+// ── PHASE 1 RESULTS: SELECTION LIST ───────────────────────────
+function renderPhase1Results() {
   const cfg = JSON.parse(localStorage.getItem('juwi_config') || '{}');
-  const tplRaw = localStorage.getItem('juwi_banner_template') ||
-    'We Congratulate [Team] on achieving [Rank] Prize in [Hackathon] organized by [Organizer]!';
-  const banner = tplRaw
-    .replace('[Team]', sub.team || 'Your Team')
-    .replace('[Rank]', sub.rank || '2nd')
-    .replace('[Hackathon]', cfg.hackName || 'BuildFest 2025')
-    .replace('[Organizer]', cfg.organizer || 'Juwi');
+  const organizer = cfg.organizer || 'The Organizers';
 
-  document.getElementById('statusBadge').textContent = 'Results Live';
-  document.getElementById('statusBadge').className   = 'badge badge-success';
+  document.getElementById('statusBadge').textContent = 'Phase 1 Results';
+  document.getElementById('statusBadge').className = 'badge badge-success';
+
+  const selectedTeams = ALL_RESULTS.filter(t => t.status === 'selected' || t.bucket === 'AUTO_ACCEPT');
 
   fireConfetti();
-  setTimeout(fireConfetti, 1200);
 
-  const scoreEntries = Object.entries(sub.scores || {});
-  const chartHTML = scoreEntries.map(([k, v], i) => {
-    const max  = sub.maxTotal / scoreEntries.length;
-    const pct  = Math.round((v / max) * 100);
-    return `
-      <div class="chart-row">
-        <div class="chart-label">${k}</div>
-        <div class="chart-track">
-          <div class="chart-fill" style="width:${pct}%;background:${CHART_COLORS[i % CHART_COLORS.length]};"></div>
-        </div>
-        <div class="chart-score">${v}</div>
+  let listHTML = selectedTeams.map(t => `
+    <div class="card pop-in" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent);">
+      <div>
+        <h3 style="margin-bottom: 4px;">${t.name}</h3>
+        <p style="font-size: 0.85rem; color: var(--text-2);">${t.college}</p>
       </div>
-    `;
-  }).join('');
+      <span class="badge badge-success"><i class="ti ti-check"></i> Selected</span>
+    </div>
+  `).join('');
+
+  if (selectedTeams.length === 0) listHTML = `<p style="text-align:center; color: var(--text-3);">No teams have been selected yet.</p>`;
 
   document.getElementById('mainWrap').innerHTML = `
-    <!-- Trophy Hero -->
-    <div class="results-hero pop-in" style="background:linear-gradient(135deg,${pal.from},${pal.to});margin-bottom:32px;">
-      <span class="trophy"><i class="ti ti-trophy"></i></span>
-      <h1 class="shimmer-text">${banner}</h1>
-      <p>presented by <strong>Juwi</strong> · AI-Augmented Judging Platform</p>
-      <div class="rank-badge">${sub.rank || '2nd'} Place</div>
+    <div style="text-align: center; margin-bottom: 40px; padding: 40px 20px; background: linear-gradient(135deg, var(--surface-2), var(--surface)); border-radius: var(--radius); border: 1px solid var(--border);">
+      <div style="font-size: 3rem; color: var(--accent); margin-bottom: 15px;">🎉</div>
+      <h1 style="font-size: 2.2rem; margin-bottom: 10px;">Phase 1 Results are Out!</h1>
+      <p style="color: var(--text-2); font-size: 1.1rem; max-width: 600px; margin: 0 auto;">
+        <strong>${organizer}</strong> congratulates the following teams for making it through the AI Triage. Prepare for Phase 2!
+      </p>
     </div>
-
-    <!-- Score Overview -->
-    <div class="grid-2 mb-24">
-      <div class="stat-pill reveal reveal-delay-1">
-        <span class="stat-number" style="color:var(--accent);">${sub.total || 39}<span style="font-size:1.25rem;color:var(--text-3);">/${sub.maxTotal || 50}</span></span>
-        <span class="stat-label">Total Score</span>
-      </div>
-      <div class="stat-pill reveal reveal-delay-2">
-        <span class="stat-number" style="color:var(--accent-2);">${sub.rank || '2nd'}</span>
-        <span class="stat-label">Final Rank</span>
-      </div>
-    </div>
-
-    <!-- Score Breakdown Bar Chart -->
-    <div class="card mb-24 reveal reveal-delay-2">
-      <h3 class="mb-16"><i class="ti ti-chart-bar"></i> Score Breakdown</h3>
-      ${chartHTML}
-    </div>
-
-    <!-- Feedback cards -->
-    <h3 class="mb-16 reveal reveal-delay-3"><i class="ti ti-message-circle"></i> Personalized Feedback</h3>
-    <div class="feedback-grid">
-      <div class="feedback-card reveal reveal-delay-3">
-        <h4><i class="ti ti-message-2"></i> Judge Remarks</h4>
-        <p class="feedback-content">${sub.remarks || 'Great work overall.'}</p>
-      </div>
-      <div class="feedback-card reveal reveal-delay-3">
-        <h4><i class="ti ti-circle-check" style="color:var(--success);"></i> Strengths</h4>
-        <p class="feedback-content">${sub.pros || '• Strong concept'}</p>
-      </div>
-      <div class="feedback-card reveal reveal-delay-4">
-        <h4><i class="ti ti-alert-triangle" style="color:var(--accent-3);"></i> Areas to Improve</h4>
-        <p class="feedback-content">${sub.cons || '• Add tests'}</p>
-      </div>
-      <div class="feedback-card reveal reveal-delay-4">
-        <h4><i class="ti ti-rocket" style="color:var(--accent);"></i> Next Steps</h4>
-        <p class="feedback-content">${sub.improvement || 'Keep building!'}</p>
-      </div>
+    
+    <div style="display: grid; gap: 12px; max-width: 800px; margin: 0 auto;">
+      ${listHTML}
     </div>
 
     <div style="margin-top:40px;text-align:center;">
       <button class="btn btn-outline" onclick="resetStudent()">Submit Another Team (Demo Reset)</button>
     </div>
   `;
+}
+
+// ── PHASE 2 RESULTS: PODIUM & ON-DEMAND AI ────────────────────
+function renderPhase2Results() {
+  const pal = PALETTES[localStorage.getItem('juwi_palette') || 'warm'];
+  const cfg = JSON.parse(localStorage.getItem('juwi_config') || '{}');
+  const tplRaw = localStorage.getItem('juwi_banner_template') || 'We Congratulate [Team] on achieving [Rank] Prize in [Hackathon] organized by [Organizer]!';
+
+  document.getElementById('statusBadge').textContent = 'Final Results';
+  document.getElementById('statusBadge').className = 'badge badge-success';
+
+  const rankedTeams = [...ALL_RESULTS].sort((a, b) => {
+    const scoreA = a.phase2_total !== null ? a.phase2_total : -1;
+    const scoreB = b.phase2_total !== null ? b.phase2_total : -1;
+    return scoreB - scoreA;
+  });
+
+  const top3 = rankedTeams.slice(0, 3);
+
+  fireConfetti();
+  setTimeout(fireConfetti, 1200);
+
+  let podiumHTML = `<div class="podium-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px;">`;
+
+  top3.forEach((team, index) => {
+    if (team.phase2_total === null) return;
+    const rankStr = index === 0 ? '1st' : index === 1 ? '2nd' : '3rd';
+    const bannerText = tplRaw.replace('[Team]', team.name).replace('[Rank]', rankStr).replace('[Hackathon]', cfg.hackName || 'Hackathon').replace('[Organizer]', cfg.organizer || 'Juwi');
+    const bg = index === 0 ? `linear-gradient(135deg,${pal.from},${pal.to})` : 'var(--surface-2)';
+    const color = index === 0 ? 'white' : 'var(--text)';
+
+    podiumHTML += `
+      <div class="card text-center pop-in" style="background: ${bg}; color: ${color}; border: ${index === 0 ? 'none' : '1px solid var(--border)'};">
+        <div style="font-size: 3rem; margin-bottom: 10px;">${index === 0 ? '🏆' : index === 1 ? '🥈' : '🥉'}</div>
+        <h3 style="color: ${color};">${team.name}</h3>
+        <p style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 15px;">${rankStr} Place Champion</p>
+        ${index === 0 ? `<p style="font-weight: 700; font-size: 0.9rem;">${bannerText}</p>` : ''}
+        <div style="margin-top: 15px; font-weight: 900; font-size: 1.5rem;">${team.phase2_total} <span style="font-size: 0.8rem; font-weight: 500; opacity: 0.7;">/50 pts</span></div>
+      </div>
+    `;
+  });
+  podiumHTML += `</div>`;
+
+  const alphabetizedTeams = [...ALL_RESULTS].sort((a, b) => a.name.localeCompare(b.name));
+  let optionsHTML = `<option value="">Select your team name...</option>`;
+  alphabetizedTeams.forEach(t => {
+    optionsHTML += `<option value="${t.id}">${t.name} (${t.college})</option>`;
+  });
+
+  document.getElementById('mainWrap').innerHTML = `
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h1 style="font-size: 2.5rem; margin-bottom: 10px;">Hackathon Results</h1>
+      <p style="color: var(--text-2);">Congratulations to everyone who participated. Building something from scratch is the real victory.</p>
+    </div>
+
+    ${podiumHTML}
+
+    <div class="divider"></div>
+
+    <div style="text-align: center; margin-top: 40px;">
+      <button class="btn btn-primary btn-lg" onclick="document.getElementById('remarksSection').style.display='block'; this.style.display='none';">
+        <i class="ti ti-scan"></i> Show My Remarks & AI Feedback
+      </button>
+    </div>
+
+    <div id="remarksSection" class="card pop-in" style="display: none; margin-top: 20px; background: linear-gradient(to bottom, var(--surface), var(--surface-2));">
+      <h2 style="text-align: center; margin-bottom: 20px;">Analyze Your Performance</h2>
+      <select id="teamFeedbackSelect" class="form-control" style="max-width: 400px; margin: 0 auto 30px; display: block; font-size: 1.1rem; padding: 12px;" onchange="triggerAIAnalysis(this.value)">
+        ${optionsHTML}
+      </select>
+
+      <div id="feedbackContainer" style="display: none; padding-top: 20px; border-top: 1px dashed var(--border);">
+        </div>
+    </div>
+
+    <div style="margin-top:40px;text-align:center;">
+      <button class="btn btn-outline" onclick="resetStudent()">Submit Another Team (Demo Reset)</button>
+    </div>
+  `;
+}
+
+// ── ON-DEMAND AI ANALYZER ─────────────────────────────────────
+async function triggerAIAnalysis(teamId) {
+  const container = document.getElementById('feedbackContainer');
+  if (!teamId) {
+    container.style.display = 'none';
+    return;
+  }
+
+  const team = ALL_RESULTS.find(t => String(t.id) === String(teamId));
+  if (!team) return;
+
+  const isFinalist = team.phase2_total !== null;
+
+  // 1. Show the Loading UI while the AI reads the repo
+  container.style.display = 'block';
+  container.className = 'pop-in';
+  container.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <h3 style="margin-bottom: 4px; color: var(--accent);">${team.name}</h3>
+        <span class="badge ${isFinalist ? 'badge-success' : 'badge-neutral'}">${isFinalist ? 'Phase 2 Finalist' : 'Phase 1 Participant'}</span>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-size: 1.8rem; font-weight: 800; line-height: 1;">${isFinalist ? team.phase2_total : team.score}</div>
+        <div style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase;">${isFinalist ? 'Final Points' : 'Triage Score'}</div>
+      </div>
+    </div>
+
+    ${team.remarks ? `
+    <div class="card mb-16" style="background: var(--surface); border-left: 3px solid var(--accent);">
+      <h4 style="margin-bottom: 8px;"><i class="ti ti-message-2"></i> Judge's Live Remarks</h4>
+      <p style="font-size: 1.05rem; font-style: italic; color: var(--text-2);">"${team.remarks}"</p>
+    </div>` : ''}
+
+    <div id="ai-deep-dive" style="text-align:center; padding: 40px 20px; background: var(--surface-2); border-radius: var(--radius-sm); border: 1px dashed var(--accent);">
+      <i class="ti ti-scan" style="font-size: 2.5rem; color: var(--accent); animation: pulse 1.5s infinite;"></i>
+      <h3 style="margin-top: 15px;">AI is scanning the repository...</h3>
+      <p style="color: var(--text-3); font-size: 0.9rem;">Generating personalized pros, cons, and improvement vectors.</p>
+    </div>
+  `;
+
+  // Inject Pulse CSS
+  if (!document.getElementById('pulse-css')) {
+    const style = document.createElement('style');
+    style.id = 'pulse-css';
+    style.innerHTML = `@keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }`;
+    document.head.appendChild(style);
+  }
+
+  // 2. Ping the Python Backend `/analyze-repo` endpoint!
+  try {
+    const githubURL = team.github !== '#' ? team.github : 'https://github.com/placeholder';
+    const response = await fetch(`http://127.0.0.1:8000/analyze-repo?github_url=${encodeURIComponent(githubURL)}`);
+    const aiData = await response.json();
+
+    // 3. Inject the AI Results
+    document.getElementById('ai-deep-dive').innerHTML = `
+      <h3 style="margin-bottom: 16px; text-align: left;"><i class="ti ti-cpu"></i> Deep AI Repository Analysis</h3>
+      <div class="feedback-grid" style="text-align: left;">
+        <div class="feedback-card" style="background: var(--surface);">
+          <h4 style="margin-bottom: 8px;"><i class="ti ti-circle-check" style="color:var(--success);"></i> Strengths Identified</h4>
+          <p class="feedback-content" style="white-space: pre-line;">${aiData.pros || '• Solid fundamental structure'}</p>
+        </div>
+        
+        <div class="feedback-card" style="background: var(--surface);">
+          <h4 style="margin-bottom: 8px;"><i class="ti ti-alert-triangle" style="color:var(--danger);"></i> Areas for Improvement</h4>
+          <p class="feedback-content" style="white-space: pre-line;">${aiData.cons || '• Testing coverage could be improved'}</p>
+        </div>
+        
+        <div class="feedback-card" style="background: var(--surface); grid-column: 1 / -1;">
+          <h4 style="margin-bottom: 8px;"><i class="ti ti-rocket" style="color:var(--accent-3);"></i> Suggested Next Steps</h4>
+          <ul style="padding-left: 20px; color: var(--text-2); font-size: 0.9rem;">
+            ${(aiData.questions || [{ q: "Implement robust CI/CD pipelines." }]).map(q => `<li style="margin-bottom: 6px;">${q.q}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.error("AI Analysis failed:", err);
+    document.getElementById('ai-deep-dive').innerHTML = `
+      <h4 style="color: var(--danger);"><i class="ti ti-alert-circle"></i> AI Analysis Unavailable</h4>
+      <p style="color: var(--text-3); font-size: 0.9rem;">Could not reach the repository or backend AI engine.</p>
+    `;
+  }
 }
 
 function resetStudent() {

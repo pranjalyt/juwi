@@ -3,8 +3,11 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 import requests
 import fitz  # This is PyMuPDF for reading slides
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel
 from openai import OpenAI
 import base64
@@ -14,6 +17,8 @@ from openai import OpenAI
 import os
 import tempfile
 import whisper
+import json
+import sqlite3
 
 
 
@@ -25,6 +30,10 @@ from vector_scorer import VectorUniquenessScorer
 from github_scorer import GitHubDensityScorer
 from llm_grader import LLMArchitectureGrader
 from fact_checker import LiveFactChecker
+
+
+import urllib.request
+import re
 
 
 # --- INITIALIZE THE 3 BRICKS ---
@@ -55,6 +64,46 @@ class BatchSubmissions(BaseModel):
 
 
 app = FastAPI()
+
+
+#Fallback Exception Handling
+@app.exception_handler(StarletteHTTPException)
+async def custom_404_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        # 1. Don't break our frontend fetch() calls! If an API route 404s, return JSON.
+        if request.url.path.startswith("/api/") or request.url.path.startswith("/analyze") or request.url.path.startswith("/process"):
+            return JSONResponse({"status": "error", "message": "API endpoint not found"}, status_code=404)
+        
+        # 2. If it's a browser page refresh, serve a slick UI that sends them back.
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>404 - Lost in the Code</title>
+            <style>
+                body {{ font-family: system-ui, sans-serif; background: #1c1c1e; color: white; text-align: center; padding-top: 15vh; }}
+                h1 {{ color: #D4A853; font-size: 5rem; margin-bottom: 0; }}
+                p {{ color: #a0a0a0; margin-bottom: 30px; }}
+                button {{ background: #D4A853; color: #1c1c1e; border: none; padding: 12px 24px; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.2s; }}
+                button:hover {{ background: #C17B5C; color: white; transform: translateY(-2px); }}
+                a {{ color: #5FAD8A; text-decoration: none; font-size: 0.9rem; margin-top: 20px; display: inline-block; }}
+            </style>
+        </head>
+        <body>
+            <h1>404</h1>
+            <h2>Oops! Dead Link.</h2>
+            <p>You tried to visit <strong>{request.url.path}</strong> but Juwi couldn't find it.<br>You likely refreshed a URL without the .html extension.</p>
+            <button onclick="window.history.back()">← Take Me Back</button>
+            <br>
+            <a href="/index.html">Or return to the Home Dashboard</a>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=html_content, status_code=404)
+    
+    # For any other HTTP error (like our beloved 422), do the normal thing
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -235,7 +284,7 @@ async def analyze_slides(file: UploadFile = File(...)):
 
 #audio Processing
 @app.post("/process-audio")
-async def process_audio(file: UploadFile = File(...)):
+async def process_audio(file: UploadFile = File(...), github_url: str = Form(None)):
     try:
         # 1. Save and transcribe the audio chunk
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
@@ -253,17 +302,36 @@ async def process_audio(file: UploadFile = File(...)):
         print(f"Heard: {transcript_text}")
 
         # 2. The Segregation Prompt
-        system_prompt = """You are a live fact-checking assistant for technical judges. 
-        Read this live speech-to-text transcript from a startup pitch.
-        Extract two things:
-        1. "tech_stack": A list of any programming languages, frameworks, or hardware mentioned.
-        2. "claims": A list of bold statements, performance metrics, or unique value propositions (e.g., "We process 10k transactions a second", "It operates at 99% accuracy", "We are the first to do X").
+        # system_prompt = """You are a live fact-checking assistant for technical judges. 
+        # Read this live speech-to-text transcript from a startup pitch.
+        # Extract two things:
+        # 1. "tech_stack": A list of any programming languages, frameworks, or hardware mentioned.
+        # 2. "claims": A list of bold statements, performance metrics, or unique value propositions (e.g., "We process 10k transactions a second", "It operates at 99% accuracy", "We are the first to do X").
 
-        If a category has no items, output an empty list [].
-        Output ONLY valid JSON in this exact format:
+        # If a category has no items, output an empty list [].
+        # Output ONLY valid JSON in this exact format:
+        # {
+        #     "tech_stack": ["tool1", "tool2"],
+        #     "claims": ["claim1", "claim2"]
+        # }"""
+
+        system_prompt = """You are a ruthless technical auditor.
+        Read this live speech-to-text transcript from a hackathon pitch.
+        
+        Extract two things:
+        1. "tech_stack": A list of ANY programming languages, frameworks, or tools mentioned.
+        2. "claims": Extract EVERY SINGLE architectural statement, feature, or achievement as a claim.
+        
+        RULES FOR CLAIMS:
+        - If they say "we used X", extract "They claim to use X".
+        - If they say "we built Y", extract "They claim to have built Y".
+        - If they say it is "fast", "secure", or "custom", extract that as a claim.
+        - DO NOT LEAVE THIS EMPTY IF THEY DESCRIBE THEIR PROJECT.
+        
+        Output ONLY valid JSON:
         {
-            "tech_stack": ["tool1", "tool2"],
-            "claims": ["claim1", "claim2"]
+            "tech_stack": ["tool1"],
+            "claims": ["They claim to have built a custom neural engine", "They claim to use TensorFlow"]
         }"""
 
         # 3. Ask Qwen to segregate the data
@@ -295,7 +363,7 @@ async def process_audio(file: UploadFile = File(...)):
             print(f"Fact-checking {len(raw_claims)} claims live...")
             for claim in raw_claims:
                 # Pass each claim to our DuckDuckGo module
-                verification = fact_checker.check_claim(claim)
+                verification = fact_checker.verify_claim(claim, github_url=github_url)
                 
                 # Bundle the original claim with Qwen's verdict
                 verified_claims.append({
@@ -375,3 +443,365 @@ async def rank_projects(payload: BatchSubmissions):
     except Exception as e:
         print(f"PIPELINE ERROR: {str(e)}")
         return {"status": "error", "message": str(e)}
+
+
+@app.get("/analyze-repo")
+async def analyze_repo(github_url: str):
+    print(f"\n🔍 [AI AUDITOR] Analyzing Repo: {github_url}")
+    
+    # Connect to your local LM Studio
+    client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+
+    try:
+        # 1. Scrape the repo files
+        url_parts = github_url.rstrip("/").split("/")
+        owner, repo = url_parts[-2], url_parts[-1]
+        base_raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/main"
+        
+        repo_context = ""
+        for file in ["README.md", "package.json", "requirements.txt", "main.py", "app.py"]:
+            res = requests.get(f"{base_raw_url}/{file}")
+            if res.status_code == 200:
+                repo_context += f"--- {file} ---\n{res.text[:1500]}\n\n"
+
+        if not repo_context:
+            repo_context = "No standard files found. They might be using a different branch name than 'main' or the repo is empty."
+
+        # 2. Force Qwen to generate Pros, Cons, and Attack Questions in JSON
+        system_prompt = """You are a ruthless technical judge for a hackathon. 
+        Read the provided GitHub repository snippets and analyze their code.
+        
+        Output ONLY valid JSON in this exact format:
+        {
+            "pros": "• First strong point\\n• Second strong point",
+            "cons": "• First weakness\\n• Second weakness",
+            "questions": [
+                {"tag": "Architecture", "q": "Your aggressive question here?"},
+                {"tag": "Security", "q": "Your aggressive question here?"}
+            ]
+        }"""
+
+        response = client.chat.completions.create(
+            model="local-model",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"REPO URL: {github_url}\n\nFILES:\n{repo_context}"}
+            ],
+            temperature=0.2
+        )
+        
+        # 3. Clean up the JSON (in case Qwen adds markdown blocks)
+        result_text = response.choices[0].message.content.strip()
+        if result_text.startswith("```json"):
+            result_text = result_text.replace("```json", "").replace("```", "").strip()
+        elif result_text.startswith("```"):
+            result_text = result_text.replace("```", "").strip()
+
+        print("✅ [AI AUDITOR] Analysis Complete!")
+        return json.loads(result_text)
+
+    except Exception as e:
+        print(f"❌ [AI AUDITOR] Failed: {e}")
+        return {
+            "pros": "• Error reading repository.",
+            "cons": "• Repo might be private or doesn't use 'main' branch.",
+            "questions": [{"tag": "Error", "q": "Ask the team to manually explain their stack."}]
+        }
+
+class JudgeScore(BaseModel):
+    teamId: int
+    teamName: str
+    scores: dict
+    total: int
+    remarks: str
+    pros: str
+    cons: str
+
+@app.post("/submit-score")
+async def submit_score(data: JudgeScore):
+    # For Phase 2, we just print it to the terminal to prove the pipe works.
+    # In Phase 3, we will write this exact data into the SQLite database!
+    print("\n" + "="*40)
+    print(f"🏆 NEW SCORE RECEIVED: {data.teamName}")
+    print(f"📊 Total Points: {data.total} / 50")
+    print(f"📝 Remarks: {data.remarks}")
+    print("="*40 + "\n")
+    
+    return {"status": "success", "message": "Score securely logged by backend."}
+
+
+class RawSubmission(BaseModel):
+    id: int
+    name: str
+    college: str
+    description: str
+    stack: str
+    github: str = ""
+
+@app.post("/api/triage")
+async def ai_triage_submission(sub: RawSubmission):
+    print(f"⚖️ [LOGIC-BASED TRIAGE] Evaluating {sub.name} from {sub.college}...")
+    
+    # --- 1. THE DEEP GITHUB SCRAPER (Checking main AND master) ---
+    repo_evidence = "Could not verify repository files."
+    
+    if sub.github and "github.com" in sub.github:
+        try:
+            match = re.search(r"github\.com/([^/]+)/([^/]+)", sub.github)
+            if match:
+                owner, repo = match.groups()
+                repo = repo.replace(".git", "") 
+                
+                fetched_files = []
+                # Check both common default branches
+                for branch in ["main", "master"]:
+                    if fetched_files: break
+                    
+                    base_raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}"
+                    for file in ["README.md", "requirements.txt", "package.json"]:
+                        res = requests.get(f"{base_raw_url}/{file}")
+                        if res.status_code == 200:
+                            fetched_files.append(f"--- {file} ---\n{res.text[:500]}")
+                
+                if fetched_files:
+                    repo_evidence = "\n\n".join(fetched_files)
+                else:
+                    repo_evidence = "Repository exists, but no standard documentation or dependency files found."
+        except Exception as e:
+            repo_evidence = f"Verification failed: {str(e)}"
+            
+    # --- 2. THE AI GRADER (Focusing on Scores) ---
+    # Note: Using the client already defined globally in your file
+    system_prompt = """You are a Senior Systems Engineer. Grade this hackathon project.
+    
+    TECH HIERARCHY:
+    - 90-100: Kernel/Low-level, Custom ML models, Cryptography, Hardware.
+    - 70-89: Complex Full-stack, Advanced Security, Distributed Systems.
+    - 40-69: Standard Web/Mobile Apps, CRUD, API integrations.
+    - 0-39: Basic HTML/CSS, or obvious lies about tech capability.
+
+    RULES:
+    - If evidence is 'Could not verify', cap score at 70 unless the description is extremely niche/hardcore.
+    - Reward security-first thinking (JWT, sanitization, etc).
+    
+    Return JSON only:
+    {
+        "ai_score": 0-100,
+        "code_quality": 0-100,
+        "tech_depth": 0-100,
+        "presentation": 0-100,
+        "complexity_score": 1-5,
+        "bullets": ["3 specific points about the tech found"]
+    }"""
+
+    user_prompt = f"Project: {sub.name}\nClaimed: {sub.stack}\nDesc: {sub.description}\n\n=== GITHUB EVIDENCE ===\n{repo_evidence}"
+
+    try:
+        response = client.chat.completions.create(
+            model="local-model",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.1
+        )
+        
+        result_text = response.choices[0].message.content.strip()
+        if "```" in result_text:
+            result_text = result_text.split("```")[1].replace("json", "").strip()
+
+        data = json.loads(result_text)
+        
+        # --- 3. MANUAL PYTHON LOGIC (Anti-Hallucination Gate) ---
+        score = data.get("ai_score", 50)
+        
+        if score >= 90:
+            final_bucket = "AUTO_ACCEPT"
+        elif score <= 40:
+            final_bucket = "AUTO_REJECT"
+        else:
+            final_bucket = "MODERATE"
+
+        # --- 4. SAVE TO SQLITE ---
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        bullets_json = json.dumps(data.get("bullets", []))
+        
+        # FIXED LINE: We replaced "Web Submission" with sub.college
+        c.execute('''
+            INSERT INTO submissions (
+                id, name, college, abstract, stack, github, verified_stack, bucket, status,
+                score, code_quality, tech_depth, presentation, complexity_score, bullets
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            str(sub.id), sub.name, sub.college, sub.description, sub.stack, 
+            sub.github if sub.github else "#", "Verified (Deep Scrape)", 
+            final_bucket, "pending",
+            score, data.get("code_quality", 50),
+            data.get("tech_depth", 50), data.get("presentation", 50),
+            data.get("complexity_score", 3), bullets_json
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"💽 Successfully saved {sub.name} to Database with Bucket: {final_bucket}")
+
+        return {
+            "status": "success",
+            "message": f"Triage complete. Score: {score}",
+            "team": {"name": sub.name, "score": score}
+        }
+
+    except Exception as e:
+        print(f"❌ Triage Error: {e}")
+        return {"status": "error", "message": str(e)}
+
+# ============================================================
+# SQLITE DATABASE SETUP & DASHBOARD ROUTES
+# ============================================================
+import sqlite3
+
+def get_db_connection():
+    # check_same_thread=False allows FastAPI to use SQLite smoothly across requests
+    conn = sqlite3.connect('hackathon.db', check_same_thread=False)
+    conn.row_factory = sqlite3.Row 
+    return conn
+
+def init_db():
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS submissions (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            college TEXT DEFAULT 'Web Submission',
+            abstract TEXT,
+            stack TEXT,
+            github TEXT,
+            verified_stack TEXT,
+            bucket TEXT,
+            status TEXT DEFAULT 'pending',
+            score INTEGER,
+            code_quality INTEGER,
+            tech_depth INTEGER,
+            presentation INTEGER,
+            complexity_score INTEGER,
+            bullets TEXT,
+            phase2_total INTEGER,
+            remarks TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+    print("💽 SQLite Database Initialized!")
+
+# Run on startup
+init_db()
+
+# Helper to convert SQLite Rows back to dictionaries with parsed JSON bullets
+def row_to_dict(row):
+    d = dict(row)
+    try:
+        if d.get("bullets"):
+            d["bullets"] = json.loads(d["bullets"])
+    except:
+        d["bullets"] = []
+    return d
+
+@app.get("/api/moderate-teams")
+async def get_moderate_queue():
+    conn = get_db_connection()
+    # This now shows EVERYTHING in the 'pending' status, 
+    # regardless of whether the AI put them in MODERATE or AUTO_ACCEPT.
+    teams = conn.execute("SELECT * FROM submissions WHERE status = 'pending'").fetchall()
+    conn.close()
+    return {"status": "success", "queue": [row_to_dict(t) for t in teams]}
+
+class JudgeDecision(BaseModel):
+    teamId: str # Using string for ID consistency
+    decision: str 
+
+@app.post("/api/team-decision")
+async def save_team_decision(data: JudgeDecision):
+    conn = get_db_connection()
+    conn.execute("UPDATE submissions SET status = ? WHERE id = ?", (data.decision, data.teamId))
+    conn.commit()
+    conn.close()
+    print(f"👨‍⚖️ [HUMAN JUDGE] Team {data.teamId} was {data.decision.upper()}")
+    return {"status": "success"}
+
+class JudgeScore(BaseModel):
+    teamId: str
+    teamName: str
+    scores: dict
+    total: int
+    remarks: str
+    pros: str
+    cons: str
+
+@app.post("/submit-score")
+async def submit_score(data: JudgeScore):
+    conn = get_db_connection()
+    conn.execute("UPDATE submissions SET phase2_total = ?, remarks = ? WHERE id = ?", 
+                 (data.total, data.remarks, data.teamId))
+    conn.commit()
+    conn.close()
+    print(f"🏆 [DB SCORE SAVED]: {data.teamName} -> {data.total} Points")
+    return {"status": "success", "message": "Score securely logged to SQLite."}
+
+@app.get("/api/admin/dashboard")
+async def admin_dashboard():
+    conn = get_db_connection()
+    all_teams = conn.execute("SELECT * FROM submissions").fetchall()
+    conn.close()
+    
+    total_submissions = len(all_teams)
+    pending_review = sum(1 for t in all_teams if t["status"] == "pending" and t["bucket"] == "MODERATE")
+    phase2_teams = sum(1 for t in all_teams if t["status"] == "selected" or t["bucket"] == "AUTO_ACCEPT")
+
+    leaderboard = []
+    for t in all_teams:
+        if t["phase2_total"] is not None:
+            leaderboard.append({
+                "id": t["id"],
+                "name": t["name"],
+                "score": t["phase2_total"]
+            })
+    
+    leaderboard.sort(key=lambda x: x["score"], reverse=True)
+
+    return {
+        "status": "success",
+        "stats": {"total": total_submissions, "pending": pending_review, "phase2": phase2_teams},
+        "leaderboard": leaderboard
+    }
+
+@app.get("/api/admin/teams")
+async def get_all_teams():
+    conn = get_db_connection()
+    teams = conn.execute("SELECT * FROM submissions").fetchall()
+    conn.close()
+    return {"status": "success", "teams": [row_to_dict(t) for t in teams]}
+
+@app.get("/api/sponsor/winners")
+async def get_sponsor_view():
+    conn = get_db_connection()
+    teams = conn.execute("SELECT * FROM submissions WHERE phase2_total IS NOT NULL ORDER BY phase2_total DESC").fetchall()
+    conn.close()
+    
+    winning_teams = []
+    for i, t in enumerate(teams):
+        winning_teams.append({
+            "rank": i + 1,
+            "name": t["name"],
+            "college": t["college"],
+            "stack": t["stack"],
+            "score": t["phase2_total"],
+            "github": t["github"]
+        })
+
+    return {"status": "success", "winners": winning_teams}
+
+app.mount("/", StaticFiles(directory="frontend_mvp", html=True), name="static")

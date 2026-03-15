@@ -85,6 +85,14 @@
     <div class="dashboard">
         <h2>🎙️ Juwi: Live Pitch Audit</h2>
 
+        <div
+            style="margin-bottom: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px; border: 1px solid #c8e6c9;">
+            <label for="githubUrlInput" style="font-weight: bold; color: #2e7d32;">🔗 Team GitHub URL
+                (Optional):</label><br>
+            <input type="text" id="githubUrlInput" placeholder="Paste GitHub URL here to verify code claims..."
+                style="width: 100%; padding: 10px; margin-top: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box;">
+        </div>
+
         <button id="startBtn">🔴 Start Listening</button>
         <button id="stopBtn" style="display:none;">⏹ Stop Pitch</button>
 
@@ -189,6 +197,11 @@
         async function sendToFastAPI(audioBlob) {
             const formData = new FormData();
             formData.append("file", audioBlob, "chunk.wav");
+
+
+            // Grab the dynamic URL from the judge's screen!
+            const teamGithubUrl = document.getElementById("githubUrlInput").value;
+            formData.append("github_url", teamGithubUrl);
 
             try {
                 const response = await fetch("http://127.0.0.1:8000/process-audio", {

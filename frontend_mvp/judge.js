@@ -3,119 +3,100 @@
 // ============================================================
 
 // ── Mock data ─────────────────────────────────────────────────
-const MODERATE_TEAMS = [
-  {
-    id: 3, name: 'ByteForce', college: 'NIT Agra',
-    stack: 'Vue.js · Django · Redis',
-    bullets: [
-      'AI-powered crop disease detection app using CNN on mobile.',
-      'Uses Django REST backend with Redis cache for real-time alerts.',
-      'Vue.js PWA front-end with offline support via Service Workers.',
-    ],
-    abstract: 'ByteForce is building a farmer-first mobile platform that detects crop disease from a photo using a fine-tuned CNN model. The system alerts nearby extension officers in real time via a Redis pub/sub backbone. Their Vue PWA works offline, making it viable in rural connectivity-poor zones.',
-    github: 'https://github.com/example/byteforce',
-    score: 61,
-  },
-  {
-    id: 4, name: 'AlgoAlchemists', college: 'RKGIT',
-    stack: 'Flutter · Firebase · TensorFlow Lite',
-    bullets: [
-      'Sign-language-to-text translator running on-device with TFLite.',
-      'Flutter cross-platform app, live transcription streamed to Firebase.',
-      'Claimed 94% accuracy — code review shows only 60% test coverage.',
-    ],
-    abstract: 'AlgoAlchemists aim to bridge the communication gap for the deaf community using a real-time sign language translator. The TFLite model runs entirely on-device (Edge AI). Firebase Firestore syncs live transcriptions across caregiver devices.',
-    github: 'https://github.com/example/algoalchemists',
-    score: 55,
-  },
-  {
-    id: 5, name: 'Stack Overflow', college: 'AKTU',
-    stack: 'HTML · CSS · Vanilla JS',
-    bullets: [
-      'Mental health check-in tool with mood tracking via emoji input.',
-      'Pure front-end only — no backend, no data persistence beyond local storage.',
-      'Clean UI but limited technical depth for a hackathon stage.',
-    ],
-    abstract: 'Stack Overflow built a browser-based mental health companion that takes a 3-question daily check-in and plots mood trends. No server required — all data is local. Simple, accessible, and well-designed but thin on tech complexity.',
-    github: 'https://github.com/example/stackoverflow',
-    score: 49,
-  },
-];
+// ============================================================
+// JUWI Judge.js — Dynamic API Integration
+// ============================================================
 
-const ATTACK_QUESTIONS = {
-  3: [
-    { tag: 'Security', q: 'Your Redis pub/sub is not authenticated. What happens if a bad actor subscribes to your alert channel?' },
-    { tag: 'Scalability', q: 'How does your CNN handle images taken in low-light conditions? What\'s your data augmentation strategy?' },
-    { tag: 'Code Smell', q: 'Your Django views.py is 800 lines. What patterns would you use to refactor this in production?' },
-  ],
-  4: [
-    { tag: 'Accuracy Claim', q: 'You claim 94% accuracy but your test suite only covers 60% of gesture classes. How did you measure this?' },
-    { tag: 'Model Size', q: 'What is the model size on-device? How does it affect battery life on a mid-range phone?' },
-    { tag: 'Latency', q: 'Firebase Firestore sync latency in rural 2G areas could exceed 5 seconds. What\'s your fallback?' },
-  ],
-  5: [
-    { tag: 'Data Privacy', q: 'localStorage is readable by any JS on the page. How are you protecting sensitive mental health data?' },
-    { tag: 'Accessibility', q: 'Your emoji input has no keyboard or screen reader support. How would you fix this?' },
-    { tag: 'Scale', q: 'How would you add a backend if you needed to support clinical counsellors tracking hundreds of patients?' },
-  ],
-};
-
-const PROS_CONS = {
-  3: {
-    pros: '• Strong real-world problem relevance\n• Offline-first architecture is technically sound\n• Django REST API is well-structured',
-    cons: '• Redis not secured in demo environment\n• CNN model accuracy not independently benchmarked\n• No error handling on mobile upload failures',
-  },
-  4: {
-    pros: '• On-device inference is impressive for a 24hr hack\n• Flutter cross-platform execution works smoothly\n• Problem statement is impactful',
-    cons: '• Accuracy claims are inflated (94% vs actual 60% test coverage)\n• Firebase keys are hardcoded in the repo\n• Model not quantized — 180MB on device',
-  },
-  5: {
-    pros: '• Accessible UI with clean color contrast\n• Mood trend graph is well-executed in vanilla JS\n• Zero-dependency approach is admirable',
-    cons: '• No real data security — localStorage is plaintext\n• Solution is front-end only — not production-scalable\n• Minimal technical innovation',
-  },
-};
-
+// ── Global State (No more hardcoded teams!) ──────────────────
+let MODERATE_TEAMS = [];
 let currentTeamIndex = 0;
 let isAudioActive = false;
 let currentTeam = null;
 let scores = {};
 
+// Keep your PROS_CONS here for Phase 2 for now
+const PROS_CONS = {
+  3: { pros: '• Strong architecture', cons: '• Missing tests' }
+};
+
+// ── Audio Engine Variables ──────────────────────────────────────
+let mediaRecorder;
+let audioChunks = [];
+let audioContext;
+let analyser;
+let microphone;
+let isSpeaking = false;
+let silenceTimer = null;
+let chunkStartTime = 0;
+
+const SILENCE_THRESHOLD = 15;
+const SILENCE_DURATION = 1500;
+const MIN_CHUNK_TIME = 15000;
+
 // ── Toast ─────────────────────────────────────────────────────
 function toast(msg, type = 'default') {
   const c = document.getElementById('toast-container');
+  if (!c) return;
   const el = document.createElement('div');
   el.className = 'toast';
   if (type === 'success') el.style.background = 'var(--success)';
-  if (type === 'danger')  el.style.background = 'var(--danger)';
+  if (type === 'danger') el.style.background = 'var(--danger)';
   el.textContent = msg;
   c.appendChild(el);
   setTimeout(() => { el.classList.add('removing'); setTimeout(() => el.remove(), 300); }, 3500);
 }
 
 // ── Phase detection ───────────────────────────────────────────
-function initPhase() {
+async function initPhase() {
   const phase = parseInt(localStorage.getItem('juwi_phase') || '1');
-  const tag   = document.getElementById('phaseTagJudge');
+  const tag = document.getElementById('phaseTagJudge');
+
   if (phase === 2) {
-    tag.textContent  = 'Phase 2: Live Finals';
-    tag.className    = 'phase-indicator phase-2';
+    if (tag) { tag.textContent = 'Phase 2: Live Finals'; tag.className = 'phase-indicator phase-2'; }
     document.getElementById('phase1View').style.display = 'none';
     document.getElementById('phase2View').style.display = 'block';
-    initPhase2();
+
+    // For Phase 2, we just load the whole database to get our accepted teams
+    await fetchAllTeamsForPhase2();
   } else {
-    tag.textContent = 'Phase 1: Mass Triage';
-    tag.className   = 'phase-indicator phase-1';
-    renderRapidCard();
+    if (tag) { tag.textContent = 'Phase 1: Mass Triage'; tag.className = 'phase-indicator phase-1'; }
+
+    // FETCH REAL TEAMS FROM BACKEND!
+    await fetchTriageQueue();
   }
 }
 
-// ── PHASE 1 ───────────────────────────────────────────────────
+// ── PHASE 1: DYNAMIC QUEUE ────────────────────────────────────
+async function fetchTriageQueue() {
+  try {
+    const res = await fetch("http://127.0.0.1:8000/api/moderate-teams");
+    const data = await res.json();
+
+    if (data.status === "success") {
+      MODERATE_TEAMS = data.queue; // Load the real Python MOCK_DATABASE!
+      currentTeamIndex = 0;
+
+      if (MODERATE_TEAMS.length === 0) {
+        showQueueComplete();
+      } else {
+        renderRapidCard();
+      }
+    }
+  } catch (err) {
+    console.error("Failed to fetch queue", err);
+    toast("Error: Could not reach Juwi Backend", "danger");
+  }
+}
+
 function renderRapidCard() {
   const total = MODERATE_TEAMS.length;
-  const t     = MODERATE_TEAMS[currentTeamIndex];
-  document.getElementById('queueCounter').textContent   = `Team ${currentTeamIndex + 1} of ${total}`;
-  document.getElementById('queueFraction').textContent  = `${currentTeamIndex + 1} / ${total}`;
-  document.getElementById('queueProgress').style.width  = `${((currentTeamIndex + 1) / total) * 100}%`;
+  const t = MODERATE_TEAMS[currentTeamIndex];
+  if (!t) return;
+
+  document.getElementById('queueCounter').textContent = `Team ${currentTeamIndex + 1} of ${total}`;
+  document.getElementById('queueFraction').textContent = `${currentTeamIndex + 1} / ${total}`;
+  document.getElementById('queueProgress').style.width = `${((currentTeamIndex + 1) / total) * 100}%`;
+
   document.getElementById('rapidCard').innerHTML = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
       <div>
@@ -139,12 +120,25 @@ function renderRapidCard() {
   `;
 }
 
-function decideTeam(decision) {
+async function decideTeam(decision) {
   const t = MODERATE_TEAMS[currentTeamIndex];
-  const teams = JSON.parse(localStorage.getItem('juwi_teams') || '[]');
-  const target = teams.find(x => x.id === t.id);
-  if (target) { target.status = decision; localStorage.setItem('juwi_teams', JSON.stringify(teams)); }
-  toast(`${t.name} → ${decision === 'selected' ? 'Selected' : 'Rejected'}`, decision === 'selected' ? 'success' : 'danger');
+
+  try {
+    // SEND THE JUDGE'S CLICK TO THE PYTHON BACKEND!
+    const response = await fetch("http://127.0.0.1:8000/api/team-decision", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ teamId: t.id, decision: decision })
+    });
+
+    if (response.ok) {
+      toast(`${t.name} → ${decision === 'selected' ? 'Selected' : 'Rejected'}`, decision === 'selected' ? 'success' : 'danger');
+    }
+  } catch (err) {
+    console.error("Failed to save decision", err);
+    toast("Backend error: Decision not saved.", "danger");
+  }
+
   nextInQueue();
 }
 
@@ -153,43 +147,76 @@ function skipTeam() { toast('Skipped — will revisit.'); nextInQueue(); }
 function nextInQueue() {
   currentTeamIndex++;
   if (currentTeamIndex >= MODERATE_TEAMS.length) {
-    document.getElementById('phase1View').innerHTML = `
-      <div class="card text-center" style="padding:60px;">
-        <div style="font-size:3rem;margin-bottom:20px;color:var(--accent);"><i class="ti ti-circle-check"></i></div>
-        <h2>Review Queue Complete</h2>
-        <p style="margin-top:8px;max-width:400px;margin-inline:auto;">You've processed all moderate teams. Go to the Admin portal to proceed to Phase 2.</p>
-        <a href="admin.html" class="btn btn-primary" style="margin-top:24px;">Back to Admin →</a>
-      </div>`;
+    showQueueComplete();
   } else {
     renderRapidCard();
   }
 }
 
+function showQueueComplete() {
+  document.getElementById('phase1View').innerHTML = `
+    <div class="card text-center" style="padding:60px;">
+      <div style="font-size:3rem;margin-bottom:20px;color:var(--accent);"><i class="ti ti-circle-check"></i></div>
+      <h2>Review Queue Complete</h2>
+      <p style="margin-top:8px;max-width:400px;margin-inline:auto;">You've processed all moderate teams. Go to the Admin portal to proceed to Phase 2.</p>
+      <button class="btn btn-primary" style="margin-top:24px;" onclick="jumpToPhase2()">Force Jump to Phase 2 →</button>
+    </div>`;
+}
+
+function jumpToPhase2() {
+  localStorage.setItem('juwi_phase', '2');
+  location.reload();
+}
+
+// Quick helper to not break Phase 2
+async function fetchAllTeamsForPhase2() {
+  try {
+    // Fetch ALL teams from the backend
+    const res = await fetch("http://127.0.0.1:8000/api/admin/teams");
+    const data = await res.json();
+
+    if (data.status === "success") {
+      // Filter ONLY the ones that the Judge selected in Phase 1 (or were auto-accepted)
+      MODERATE_TEAMS = data.teams.filter(t => t.status === 'selected' || t.bucket === 'AUTO_ACCEPT');
+      initPhase2();
+    }
+  } catch (e) {
+    console.error("Failed to fetch Phase 2 teams", e);
+    toast("Error loading Phase 2 teams from DB.", "danger");
+  }
+}
+
 // ── PHASE 2 ───────────────────────────────────────────────────
 function initPhase2() {
-  const teams = JSON.parse(localStorage.getItem('juwi_teams') || '[]');
-  const sel   = teams.length ? teams.filter(t => t.status === 'selected') :
-    [{ id: 1, name: 'Team Rocket' }, { id: 6, name: 'Quantum Leap' }, { id: 9, name: 'Kernel Panic' }];
+  // We no longer check localStorage. We use the real DB array.
   const select = document.getElementById('teamSelect');
-  sel.forEach(t => {
+  select.innerHTML = '<option value="">Select a team to judge…</option>';
+
+  if (MODERATE_TEAMS.length === 0) {
+    select.innerHTML = '<option value="">No teams pushed to Phase 2 yet...</option>';
+  }
+
+  MODERATE_TEAMS.forEach(t => {
     const opt = document.createElement('option');
-    opt.value = t.id; opt.textContent = t.name;
+    opt.value = t.id;
+    opt.textContent = t.name + (t.college ? ` (${t.college})` : '');
     select.appendChild(opt);
   });
+
   buildRubricSliders();
 }
 
 function buildRubricSliders() {
   const rubrics = JSON.parse(localStorage.getItem('juwi_rubrics') || '[]');
   const defaults = [
-    { id: 1, name: 'Innovation',      weight: 10 },
+    { id: 1, name: 'Innovation', weight: 10 },
     { id: 2, name: 'Technical Depth', weight: 10 },
-    { id: 3, name: 'Code Quality',    weight: 10 },
-    { id: 4, name: 'Presentation',    weight: 10 },
-    { id: 5, name: 'UI/UX Design',    weight: 10 },
+    { id: 3, name: 'Code Quality', weight: 10 },
+    { id: 4, name: 'Presentation', weight: 10 },
+    { id: 5, name: 'UI/UX Design', weight: 10 },
   ];
   const list = rubrics.length ? rubrics : defaults;
-  const max  = list.reduce((a, b) => a + b.weight, 0);
+  const max = list.reduce((a, b) => a + b.weight, 0);
   document.getElementById('scoreMax').textContent = `/ ${max}`;
   document.getElementById('rubricSliders').innerHTML = `
     <h4 style="margin-bottom:16px;"><i class="ti ti-target"></i> Scoring Rubric</h4>
@@ -223,74 +250,259 @@ function recalcTotal() {
   document.getElementById('totalScore').textContent = total;
 }
 
-function loadTeamContext() {
-  const tid = parseInt(document.getElementById('teamSelect').value);
+async function loadTeamContext() {
+  // Grab the ID as a string, don't use parseInt!
+  const tid = document.getElementById('teamSelect').value;
   if (!tid) return;
-  currentTeam = MODERATE_TEAMS.find(t => t.id === tid) || {
-    id: tid, name: document.querySelector(`#teamSelect option[value="${tid}"]`)?.textContent || 'Team',
-    abstract: 'A powerful AI project with real-world impact. The team demonstrated strong technical depth and polished execution.',
-    github: 'https://github.com/example/team',
-    stack: 'React · FastAPI · PostgreSQL',
-  };
-  document.getElementById('judgeLayout').style.display = 'grid';
-  if (currentTeam.abstract) {
+
+  // Force both sides to be strings just to be 100% safe
+  currentTeam = MODERATE_TEAMS.find(t => String(t.id) === String(tid));
+
+  if (currentTeam) {
+    console.log("✅ Loading Context for:", currentTeam.name);
+    // 1. Show the layout and basic details
+    document.getElementById('judgeLayout').style.display = 'grid';
+
     const ab = document.getElementById('abstractPreview');
-    ab.style.display = 'block';
-    ab.textContent = currentTeam.abstract;
+    if (ab) {
+      ab.style.display = 'block';
+      ab.textContent = currentTeam.abstract;
+    }
+
+    const ghLink = document.getElementById('githubLink');
+    if (ghLink) ghLink.href = currentTeam.github;
+
+    // 2. Put the UI in a "Loading" state so we know Qwen is thinking
+    document.getElementById('prosBox').textContent = "🤖 AI is reading the codebase...";
+    document.getElementById('consBox').textContent = "🤖 AI is reading the codebase...";
+    document.getElementById('attackFeed').innerHTML = "<div style='padding:20px; text-align:center;'>Scanning GitHub Repo...</div>";
+
+    toast(`Analyzing ${currentTeam.name}'s Repo...`);
+
+    // 3. Fetch the REAL AI analysis from your FastAPI backend
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/analyze-repo?github_url=${currentTeam.github}`);
+      const data = await response.json();
+
+      // 4. Inject the real AI results into your UI!
+      document.getElementById('prosBox').style.whiteSpace = 'pre-line';
+      document.getElementById('consBox').style.whiteSpace = 'pre-line';
+      document.getElementById('prosBox').textContent = data.pros;
+      document.getElementById('consBox').textContent = data.cons;
+
+      const feed = document.getElementById('attackFeed');
+      feed.innerHTML = data.questions.map(a => `
+        <div class="attack-item">
+          <strong><i class="ti ti-bolt" style="color:var(--accent);"></i> ${a.tag}</strong>
+          ${a.q}
+        </div>
+      `).join('');
+
+      toast("✅ AI Repo Analysis Complete!", "success");
+
+    } catch (err) {
+      console.error("Failed to fetch repo analysis", err);
+      toast("Error reaching AI Backend", "danger");
+    }
   }
-  if (currentTeam.github) {
-    document.getElementById('githubLink').href = currentTeam.github;
-  }
-  toast(`Context loaded: ${currentTeam.name}`);
 }
 
-// ── Audio toggle ──────────────────────────────────────────────
-function toggleAudio() {
+//   // FOR TESTING: Override ByteForce's GitHub with Autotantra so the AI can actually read code
+//   if (currentTeam.name === "ByteForce") {
+//     currentTeam.github = "https://github.com/pranjalyt/autotantra";
+//   }
+
+//   document.getElementById('judgeLayout').style.display = 'grid';
+//   if (currentTeam.abstract) {
+//     const ab = document.getElementById('abstractPreview');
+//     ab.style.display = 'block';
+//     ab.textContent = currentTeam.abstract;
+//   }
+//   if (currentTeam.github) {
+//     document.getElementById('githubLink').href = currentTeam.github;
+//   }
+//   toast(`Context loaded: ${currentTeam.name}`);
+// }
+
+// ── REAL Juwi Audio & AI Integration ────────────────────────
+
+async function toggleAudio() {
   isAudioActive = !isAudioActive;
   const btn = document.getElementById('audioToggle');
   const dot = document.getElementById('recDot');
+
   if (isAudioActive) {
     btn.innerHTML = '<i class="ti ti-player-stop"></i> Stop Audio';
     btn.classList.add('pulse-btn');
     dot.className = 'rec-dot active';
-    simulateBsDetector();
-    generateAttacks();
-    toast('Live audio activated.', 'success');
+
+    // Clear the fake data
+    document.getElementById('attackFeed').innerHTML = '';
+    document.getElementById('bsDetail').textContent = "Listening for technical claims...";
+
+    toast('Live audio activated. Juwi is listening.', 'success');
+    await setupAudio();
   } else {
     btn.innerHTML = '<i class="ti ti-microphone"></i> Enable Live Audio';
     btn.classList.remove('pulse-btn');
     dot.className = 'rec-dot inactive';
+
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+    }
     toast('Audio stopped.');
   }
 }
 
-function simulateBsDetector() {
-  if (!isAudioActive) return;
-  let val = Math.floor(Math.random() * 40) + 40;
-  document.getElementById('bsBar').style.width   = val + '%';
-  document.getElementById('bsScore').textContent = val + '%';
-  document.getElementById('bsDetail').textContent =
-    val > 70 ? 'Claims appear consistent with codebase.' :
-    val > 50 ? 'Some claims are partially unverifiable.' :
-               'Multiple claims appear unsupported by code.';
-  setTimeout(() => { if (isAudioActive) simulateBsDetector(); }, 6000);
+async function setupAudio() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder = new MediaRecorder(stream);
+
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = audioContext.createAnalyser();
+  microphone = audioContext.createMediaStreamSource(stream);
+  microphone.connect(analyser);
+
+  analyser.fftSize = 512;
+  const bufferLength = analyser.frequencyBinCount;
+  const dataArray = new Uint8Array(bufferLength);
+
+  mediaRecorder.onstart = () => { chunkStartTime = Date.now(); };
+  mediaRecorder.ondataavailable = event => {
+    if (event.data.size > 0) audioChunks.push(event.data);
+  };
+
+  mediaRecorder.onstop = async () => {
+    if (audioChunks.length === 0) return;
+    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+    audioChunks = [];
+
+    if (isAudioActive) {
+      mediaRecorder.start();
+    }
+    sendToJuwiEngine(audioBlob);
+  };
+
+  function checkSilence() {
+    if (!isAudioActive) return;
+
+    analyser.getByteFrequencyData(dataArray);
+    let sum = dataArray.reduce((a, b) => a + b, 0);
+    let averageVolume = sum / bufferLength;
+
+    if (averageVolume > SILENCE_THRESHOLD) {
+      if (!isSpeaking) {
+        isSpeaking = true;
+        document.getElementById('bsDetail').textContent = "🗣️ Student is speaking...";
+        if (mediaRecorder.state === 'inactive') mediaRecorder.start();
+      }
+      clearTimeout(silenceTimer);
+    } else {
+      if (isSpeaking) {
+        silenceTimer = setTimeout(() => {
+          let timeElapsed = Date.now() - chunkStartTime;
+          if (timeElapsed > MIN_CHUNK_TIME) {
+            isSpeaking = false;
+            document.getElementById('bsDetail').textContent = "⏸️ Checking facts against GitHub...";
+            if (mediaRecorder.state === 'recording') mediaRecorder.stop();
+          }
+        }, SILENCE_DURATION);
+      }
+    }
+    requestAnimationFrame(checkSilence);
+  }
+  checkSilence();
 }
 
-function generateAttacks() {
-  const tid   = currentTeam ? currentTeam.id : 3;
-  const q     = (ATTACK_QUESTIONS[tid] || ATTACK_QUESTIONS[3]);
-  const feed  = document.getElementById('attackFeed');
-  feed.innerHTML = q.map(a => `
-    <div class="attack-item">
-      <strong><i class="ti ti-bolt" style="color:var(--accent);"></i> ${a.tag}</strong>
-      ${a.q}
-    </div>
-  `).join('');
+async function sendToJuwiEngine(audioBlob) {
+  const formData = new FormData();
+  formData.append("file", audioBlob, "chunk.wav");
+
+  // Pass the actual Team's GitHub URL dynamically!
+  if (currentTeam && currentTeam.github) {
+    formData.append("github_url", currentTeam.github);
+  }
+
+  try {
+    const response = await fetch("http://127.0.0.1:8000/process-audio", {
+      method: "POST",
+      body: formData
+    });
+    const data = await response.json();
+
+    if (data.status === "success") {
+      renderAIDataToUI(data);
+    }
+  } catch (error) {
+    console.error("Juwi API Error:", error);
+    document.getElementById('bsDetail').textContent = "Failed to reach Juwi Backend.";
+  }
 }
+
+function renderAIDataToUI(data) {
+  // 1. ALWAYS reset the UI status first so it never gets stuck!
+  document.getElementById('bsDetail').textContent = "Listening for technical claims...";
+
+  // 2. Safely grab the feed element
+  const feed = document.getElementById('attackFeed');
+
+  // 3. Show the raw transcript so the Judge knows the mic is working!
+  if (data.transcript && data.transcript.trim() !== "") {
+    feed.innerHTML = `
+      <div class="attack-item" style="background: var(--surface-2); border-left: 2px solid var(--text-3); margin-bottom: 12px;">
+        <strong>🎙️ Heard:</strong> <span style="font-style: italic; color: var(--text-2);">"${data.transcript}"</span>
+      </div>
+    ` + feed.innerHTML;
+  }
+
+  // 4. If the AI didn't find any fact-checkable claims, stop here.
+  if (!data.verified_claims || data.verified_claims.length === 0) {
+    return;
+  }
+
+  // 5. Process the claims if they exist
+  let attacksHTML = "";
+  let totalClaims = data.verified_claims.length;
+  let trueCount = 0;
+
+  data.verified_claims.forEach(vc => {
+    let icon = '⚠️'; let color = 'var(--text-3)';
+
+    if (vc.verdict === 'TRUE') {
+      icon = '✅'; color = 'var(--success)'; trueCount++;
+    } else if (vc.verdict === 'FALSE' || vc.verdict === 'EXAGGERATED') {
+      icon = '❌'; color = 'var(--danger)';
+    }
+
+    attacksHTML += `
+        <div class="attack-item" style="border-left: 3px solid ${color}; margin-bottom: 12px;">
+            <strong>${icon} [${vc.verdict}] CLAIM: "${vc.claim}"</strong>
+            <span style="display:block; margin-top:4px;">🤖 <span style="color:var(--text-2);">${vc.explanation}</span></span>
+        </div>`;
+  });
+
+  // 6. Update the B.S. Meter!
+  let truthScore = Math.round((trueCount / totalClaims) * 100);
+  document.getElementById('bsBar').style.width = truthScore + '%';
+  document.getElementById('bsScore').textContent = truthScore + '% Valid';
+
+  if (truthScore < 50) {
+    document.getElementById('bsBar').style.background = 'var(--danger)';
+    document.getElementById('bsDetail').textContent = "High B.S. detected! Ask the attack questions below.";
+  } else {
+    document.getElementById('bsBar').style.background = 'linear-gradient(90deg,var(--success),var(--accent-3))';
+    document.getElementById('bsDetail').textContent = "Claims appear mostly consistent with codebase.";
+  }
+
+  // 7. Append new claims to the feed below the transcript
+  feed.innerHTML = attacksHTML + feed.innerHTML;
+}
+
+// ── END REAL Juwi Integration ────────────────────────
 
 function generateProsCons() {
   const tid = currentTeam ? currentTeam.id : 3;
-  const pc  = PROS_CONS[tid] || { pros: '• Strong concept\n• Good presentation', cons: '• Limited testing\n• Scalability not addressed' };
+  const pc = PROS_CONS[tid] || { pros: '• Strong concept\n• Good presentation', cons: '• Limited testing\n• Scalability not addressed' };
   document.getElementById('prosBox').style.whiteSpace = 'pre-line';
   document.getElementById('consBox').style.whiteSpace = 'pre-line';
   document.getElementById('prosBox').textContent = pc.pros;
@@ -298,21 +510,43 @@ function generateProsCons() {
   toast('Pros & Cons generated!', 'success');
 }
 
-function submitScore() {
+async function submitScore() {
   if (!currentTeam) { toast('Load a team first.', 'danger'); return; }
-  const total   = Object.values(scores).reduce((a, b) => a + b.val, 0);
+
+  const total = Object.values(scores).reduce((a, b) => a + b.val, 0);
   const remarks = document.getElementById('remarksBox').value;
-  const saved   = JSON.parse(localStorage.getItem('juwi_scores') || '{}');
-  saved[currentTeam.id] = {
+
+  // Package up all the judge's hard work into a JSON payload
+  const payload = {
+    teamId: currentTeam.id,
     teamName: currentTeam.name,
-    scores, total,
-    remarks,
-    pros:  document.getElementById('prosBox').textContent,
-    cons:  document.getElementById('consBox').textContent,
-    timestamp: new Date().toISOString(),
+    scores: scores,
+    total: total,
+    remarks: remarks,
+    pros: document.getElementById('prosBox').textContent,
+    cons: document.getElementById('consBox').textContent
   };
-  localStorage.setItem('juwi_scores', JSON.stringify(saved));
-  toast(`✓ Score submitted for ${currentTeam.name}!`, 'success');
+
+  try {
+    // Send the payload to the FastAPI backend!
+    const response = await fetch("http://127.0.0.1:8000/submit-score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      toast(`✓ Score securely submitted for ${currentTeam.name}!`, 'success');
+
+      // Still save to localStorage just as a backup for the frontend
+      const saved = JSON.parse(localStorage.getItem('juwi_scores') || '{}');
+      saved[currentTeam.id] = { ...payload, timestamp: new Date().toISOString() };
+      localStorage.setItem('juwi_scores', JSON.stringify(saved));
+    }
+  } catch (error) {
+    console.error("Score submission failed:", error);
+    toast("Backend error: Could not save score.", "danger");
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────────

@@ -82,7 +82,7 @@ class LiveFactChecker:
             for file in ["README.md", "package.json", "requirements.txt", "main.py", "app.py"]:
                 res = requests.get(f"{base_raw_url}/{file}")
                 if res.status_code == 200:
-                    repo_context += f"--- {file} ---\n{res.text[:800]}\n\n"
+                    repo_context += f"--- {file} ---\n{res.text[:2100]}\n\n"
 
             system_prompt = """You are a Senior Code Auditor. The student made a bold claim about what they built. 
             Check the provided GitHub repository snippets to see if there is ANY evidence that they actually built it.

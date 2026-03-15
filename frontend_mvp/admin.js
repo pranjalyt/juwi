@@ -20,16 +20,16 @@ const state = {
 
 // ── Mocked Team Data ──────────────────────────────────────────
 const MOCK_TEAMS = [
-  { id: 1,  name: 'Team Rocket',    college: 'RKGIT',      stack: 'React, FastAPI, OpenAI',      score: 88, status: 'selected' },
-  { id: 2,  name: 'Null Pointers',  college: 'IIT Delhi',  stack: 'Next.js, Rust, PostgreSQL',   score: 76, status: 'selected' },
-  { id: 3,  name: 'ByteForce',      college: 'NIT Agra',   stack: 'Vue.js, Django, Redis',       score: 61, status: 'moderate' },
-  { id: 4,  name: 'AlgoAlchemists', college: 'RKGIT',      stack: 'Flutter, Firebase',           score: 55, status: 'moderate' },
-  { id: 5,  name: 'Stack Overflow', college: 'AKTU',       stack: 'HTML, CSS, JS',               score: 49, status: 'moderate' },
-  { id: 6,  name: 'Quantum Leap',   college: 'IIT Kanpur', stack: 'PyTorch, FastAPI, Next.js',   score: 92, status: 'selected' },
-  { id: 7,  name: 'The Debuggers',  college: 'GLA Univ',   stack: 'Spring Boot, Angular',        score: 35, status: 'rejected' },
-  { id: 8,  name: 'Ctrl+Alt+Del',   college: 'AKTU',       stack: 'WordPress',                   score: 22, status: 'rejected' },
-  { id: 9,  name: 'Kernel Panic',   college: 'NIT Agra',   stack: 'Go, gRPC, React',             score: 81, status: 'selected' },
-  { id: 10, name: 'Zero Day',       college: 'IIT Delhi',  stack: 'C++, Qt, MQTT',               score: 44, status: 'rejected' },
+  { id: 1, name: 'Team Rocket', college: 'RKGIT', stack: 'React, FastAPI, OpenAI', score: 88, status: 'selected' },
+  { id: 2, name: 'Null Pointers', college: 'IIT Delhi', stack: 'Next.js, Rust, PostgreSQL', score: 76, status: 'selected' },
+  { id: 3, name: 'ByteForce', college: 'NIT Agra', stack: 'Vue.js, Django, Redis', score: 61, status: 'moderate' },
+  { id: 4, name: 'AlgoAlchemists', college: 'RKGIT', stack: 'Flutter, Firebase', score: 55, status: 'moderate' },
+  { id: 5, name: 'Stack Overflow', college: 'AKTU', stack: 'HTML, CSS, JS', score: 49, status: 'moderate' },
+  { id: 6, name: 'Quantum Leap', college: 'IIT Kanpur', stack: 'PyTorch, FastAPI, Next.js', score: 92, status: 'selected' },
+  { id: 7, name: 'The Debuggers', college: 'GLA Univ', stack: 'Spring Boot, Angular', score: 35, status: 'rejected' },
+  { id: 8, name: 'Ctrl+Alt+Del', college: 'AKTU', stack: 'WordPress', score: 22, status: 'rejected' },
+  { id: 9, name: 'Kernel Panic', college: 'NIT Agra', stack: 'Go, gRPC, React', score: 81, status: 'selected' },
+  { id: 10, name: 'Zero Day', college: 'IIT Delhi', stack: 'C++, Qt, MQTT', score: 44, status: 'rejected' },
 ];
 
 // ── Toast ─────────────────────────────────────────────────────
@@ -38,7 +38,7 @@ function toast(msg, type = 'default') {
   const el = document.createElement('div');
   el.className = 'toast';
   if (type === 'success') el.style.background = 'var(--success)';
-  if (type === 'danger')  el.style.background = 'var(--danger)';
+  if (type === 'danger') el.style.background = 'var(--danger)';
   el.textContent = msg;
   container.appendChild(el);
   setTimeout(() => {
@@ -59,12 +59,12 @@ document.querySelectorAll('.sidebar-link').forEach(link => {
 
 // ── Phase Toggle ──────────────────────────────────────────────
 const phaseToggle = document.getElementById('phaseToggle');
-const phaseTag    = document.getElementById('phaseTag');
+const phaseTag = document.getElementById('phaseTag');
 
 phaseToggle.addEventListener('change', () => {
   state.phase = phaseToggle.checked ? 2 : 1;
   phaseTag.textContent = state.phase === 1 ? 'Phase 1: Mass Triage' : 'Phase 2: Live Finals';
-  phaseTag.className   = state.phase === 1 ? 'phase-indicator phase-1' : 'phase-indicator phase-2';
+  phaseTag.className = state.phase === 1 ? 'phase-indicator phase-1' : 'phase-indicator phase-2';
   localStorage.setItem('juwi_phase', state.phase);
   toast(`Switched to Phase ${state.phase}`, 'success');
 });
@@ -72,16 +72,16 @@ phaseToggle.addEventListener('change', () => {
 // ── Setup ─────────────────────────────────────────────────────
 function saveSetup() {
   const name = document.getElementById('hackName').value.trim();
-  const org  = document.getElementById('organizer').value.trim();
+  const org = document.getElementById('organizer').value.trim();
   if (!name || !org) { toast('Please fill in all required fields.', 'danger'); return; }
   const config = {
-    hackName:   name,
-    organizer:  org,
-    maxTeams:   document.getElementById('maxTeams').value,
-    reqPPT:     document.getElementById('req-ppt').checked,
-    reqAbstract:document.getElementById('req-abstract').checked,
-    reqGithub:  document.getElementById('req-github').checked,
-    reqDemo:    document.getElementById('req-demo').checked,
+    hackName: name,
+    organizer: org,
+    maxTeams: document.getElementById('maxTeams').value,
+    reqPPT: document.getElementById('req-ppt').checked,
+    reqAbstract: document.getElementById('req-abstract').checked,
+    reqGithub: document.getElementById('req-github').checked,
+    reqDemo: document.getElementById('req-demo').checked,
   };
   localStorage.setItem('juwi_config', JSON.stringify(config));
   toast('✓ Event configuration saved!', 'success');
@@ -132,44 +132,68 @@ function saveRubric() {
 // ── AI Triage ─────────────────────────────────────────────────
 let currentFilter = 'all';
 
-function runTriage() {
+async function runTriage() {
   const btn = document.querySelector('[onclick="runTriage()"]');
-  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Analysing submissions...';
-  setTimeout(() => {
-    state.teams = JSON.parse(JSON.stringify(MOCK_TEAMS));
-    localStorage.setItem('juwi_teams', JSON.stringify(state.teams));
-    updateTriageStats();
-    renderTriageTable();
-    btn.disabled = false; btn.innerHTML = '<i class="ti ti-cpu"></i> Re-run AI Triage';
-    toast('✓ AI Triage complete!', 'success');
-  }, 2200);
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader" style="animation: spin 1s linear infinite;"></i> Syncing with AI Backend...';
+
+  try {
+    // 1. Fetch the REAL database from Python!
+    const response = await fetch("http://127.0.0.1:8000/api/admin/teams");
+    const data = await response.json();
+
+    if (data.status === "success") {
+      state.teams = data.teams;
+      updateTriageStats();
+      renderTriageTable(currentFilter);
+      toast('✓ Live hackathon data synced!', 'success');
+
+      // Inject spin animation safely if it doesn't exist
+      if (!document.getElementById('spin-style')) {
+        const style = document.createElement('style');
+        style.id = 'spin-style';
+        style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
+        document.head.appendChild(style);
+      }
+    }
+  } catch (err) {
+    console.error("Failed to fetch triage data", err);
+    toast('Error: Could not reach backend.', 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-cpu"></i> Refresh Live Data';
+  }
 }
 
 function updateTriageStats() {
-  const teams = state.teams.length ? state.teams : (JSON.parse(localStorage.getItem('juwi_teams')) || []);
-  document.getElementById('st-selected').textContent = teams.filter(t => t.status === 'selected').length;
-  document.getElementById('st-moderate').textContent = teams.filter(t => t.status === 'moderate').length;
-  document.getElementById('st-rejected').textContent = teams.filter(t => t.status === 'rejected').length;
+  document.getElementById('st-selected').textContent = state.teams.filter(t => t.status === 'selected').length;
+  // Note: Backend uses 'pending' for Moderate teams
+  document.getElementById('st-moderate').textContent = state.teams.filter(t => t.status === 'pending').length;
+  document.getElementById('st-rejected').textContent = state.teams.filter(t => t.status === 'rejected').length;
 }
 
 function renderTriageTable(filter = currentFilter) {
   currentFilter = filter;
-  const teams = (state.teams.length ? state.teams : (JSON.parse(localStorage.getItem('juwi_teams')) || []));
-  const shown  = filter === 'all' ? teams : teams.filter(t => t.status === filter);
-  const badgeCfg = {
-    selected: ['badge-success', '<i class="ti ti-circle-check"></i> Selected'],
-    moderate: ['badge-warning', '<i class="ti ti-alert-triangle"></i> Moderate'],
-    rejected: ['badge-danger',  '<i class="ti ti-circle-x"></i> Rejected'],
-  };
+  // Map frontend filter tabs to backend status text
+  const statusMap = { 'all': 'all', 'selected': 'selected', 'moderate': 'pending', 'rejected': 'rejected' };
+  const targetStatus = statusMap[filter];
+
+  const shown = targetStatus === 'all' ? state.teams : state.teams.filter(t => t.status === targetStatus);
   const tbody = document.getElementById('triage-tbody');
+
   if (!shown.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-3);">No teams in this category.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-3);">No teams found in this category.</td></tr>`;
     return;
   }
+
   tbody.innerHTML = shown.map((t, i) => {
-    const [cls, label] = badgeCfg[t.status];
+    let cls = 'badge-warning'; let label = '<i class="ti ti-alert-triangle"></i> Moderate';
+    if (t.status === 'selected') { cls = 'badge-success'; label = '<i class="ti ti-circle-check"></i> Selected'; }
+    if (t.status === 'rejected') { cls = 'badge-danger'; label = '<i class="ti ti-circle-x"></i> Rejected'; }
+
     return `<tr>
-      <td style="color:var(--text-3);font-size:.8rem;">${i+1}</td>
+      <td style="color:var(--text-3);font-size:.8rem;">${i + 1}</td>
       <td><strong>${t.name}</strong></td>
       <td>${t.college}</td>
       <td><span style="font-size:.8rem;">${t.stack}</span></td>
@@ -177,20 +201,37 @@ function renderTriageTable(filter = currentFilter) {
       <td><span class="badge ${cls}">${label}</span></td>
       <td>
         <select class="form-control" style="padding:6px 10px;font-size:.8rem;" onchange="overrideStatus(${t.id}, this.value)">
-          <option value="selected" ${t.status==='selected'?'selected':''}>Select</option>
-          <option value="moderate" ${t.status==='moderate'?'selected':''}>Moderate</option>
-          <option value="rejected" ${t.status==='rejected'?'selected':''}>Reject</option>
+          <option value="pending" ${t.status === 'pending' ? 'selected' : ''}>Moderate</option>
+          <option value="selected" ${t.status === 'selected' ? 'selected' : ''}>Select</option>
+          <option value="rejected" ${t.status === 'rejected' ? 'selected' : ''}>Reject</option>
         </select>
       </td>
     </tr>`;
   }).join('');
 }
 
-function overrideStatus(id, newStatus) {
-  const t = state.teams.find(t => t.id === id);
-  if (t) { t.status = newStatus; updateTriageStats(); renderTriageTable(); toast('Status updated.'); }
+async function overrideStatus(id, newStatus) {
+  try {
+    // 2. Send the Admin's manual override straight to the Python backend
+    const response = await fetch("http://127.0.0.1:8000/api/team-decision", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ teamId: id, decision: newStatus })
+    });
+
+    if (response.ok) {
+      const t = state.teams.find(t => t.id === id);
+      if (t) t.status = newStatus;
+      updateTriageStats();
+      renderTriageTable(currentFilter);
+      toast('Backend status updated.', 'success');
+    }
+  } catch (err) {
+    toast('Failed to update backend.', 'danger');
+  }
 }
 
+// Attach event listeners to the filter tabs
 document.getElementById('triage-filter').addEventListener('click', e => {
   const tab = e.target.closest('.tab-item');
   if (!tab) return;
@@ -246,6 +287,6 @@ updateTriageStats();
 const savedPhase = parseInt(localStorage.getItem('juwi_phase') || '1');
 if (savedPhase === 2) { phaseToggle.checked = true; phaseToggle.dispatchEvent(new Event('change')); }
 const savedConfig = JSON.parse(localStorage.getItem('juwi_config') || '{}');
-if (savedConfig.hackName)  document.getElementById('hackName').value  = savedConfig.hackName;
+if (savedConfig.hackName) document.getElementById('hackName').value = savedConfig.hackName;
 if (savedConfig.organizer) document.getElementById('organizer').value = savedConfig.organizer;
-if (savedConfig.maxTeams)  document.getElementById('maxTeams').value  = savedConfig.maxTeams;
+if (savedConfig.maxTeams) document.getElementById('maxTeams').value = savedConfig.maxTeams;
