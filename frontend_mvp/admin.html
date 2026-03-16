@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,282 +9,455 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <style>
     .phase-toggle-card {
-      display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
       background: linear-gradient(135deg, var(--surface), var(--surface-2));
       border: 1.5px solid var(--border);
-      border-radius: var(--radius); padding: 24px 28px;
+      border-radius: var(--radius);
+      padding: 24px 28px;
       margin-bottom: 32px;
       box-shadow: var(--shadow);
     }
+
     .rubric-item {
-      display: flex; align-items: center; gap: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
       padding: 14px 16px;
       background: var(--surface-2);
       border-radius: var(--radius-sm);
       margin-bottom: 10px;
     }
-    .rubric-item input[type="text"] { flex: 1; }
-    .rubric-delete { background: none; border: none; cursor: pointer; color: var(--danger); font-size: 1.2rem; padding: 4px; }
-    .triage-bucket { padding: 8px 0; border-radius: var(--radius-sm); }
+
+    .rubric-item input[type="text"] {
+      flex: 1;
+    }
+
+    .rubric-delete {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--danger);
+      font-size: 1.2rem;
+      padding: 4px;
+    }
+
+    .triage-bucket {
+      padding: 8px 0;
+      border-radius: var(--radius-sm);
+    }
+
     .triage-label {
-      font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
-      padding: 2px 10px; border-radius: 99px; display: inline-flex; align-items: center; gap: 4px;
+      font-size: .7rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 2px 10px;
+      border-radius: 99px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
+
     .scheduler-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
     }
-    @media(max-width:600px){ .scheduler-grid{ grid-template-columns: 1fr; } }
-    .theme-swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    @media(max-width:600px) {
+      .scheduler-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .theme-swatches {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     .swatch {
-      width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-      border: 3px solid transparent; transition: all .2s;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all .2s;
       box-shadow: var(--shadow-sm);
     }
-    .swatch.active { border-color: var(--text); transform: scale(1.15); }
-    .stats-bar { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+
+    .swatch.active {
+      border-color: var(--text);
+      transform: scale(1.15);
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
     .admin-sidebar {
-      width: 220px; flex-shrink: 0;
+      width: 220px;
+      flex-shrink: 0;
     }
-    .sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
     .sidebar-link {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px; border-radius: var(--radius-sm);
-      font-weight: 600; font-size: .875rem; color: var(--text-2);
-      cursor: pointer; transition: all .15s; user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: .875rem;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all .15s;
+      user-select: none;
     }
-    .sidebar-link:hover { background: var(--surface-2); color: var(--text); }
-    .sidebar-link.active { background: var(--surface-2); color: var(--text); }
-    .main-content { flex: 1; min-width: 0; }
-    .admin-layout { display: flex; gap: 32px; align-items: flex-start; }
-    @media(max-width:768px){ .admin-layout{ flex-direction: column; } .admin-sidebar{ width: 100%; } }
-    .section-panel { display: none; }
-    .section-panel.active { display: block; }
+
+    .sidebar-link:hover {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+
+    .sidebar-link.active {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+
+    .main-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .admin-layout {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+    }
+
+    @media(max-width:768px) {
+      .admin-layout {
+        flex-direction: column;
+      }
+
+      .admin-sidebar {
+        width: 100%;
+      }
+    }
+
+    .section-panel {
+      display: none;
+    }
+
+    .section-panel.active {
+      display: block;
+    }
+
     .results-unlock-form {
-      background: linear-gradient(135deg, rgba(193,123,92,.07), rgba(212,168,83,.07));
-      border: 1.5px solid rgba(193,123,92,.2);
-      border-radius: var(--radius); padding: 28px;
+      background: linear-gradient(135deg, rgba(193, 123, 92, .07), rgba(212, 168, 83, .07));
+      border: 1.5px solid rgba(193, 123, 92, .2);
+      border-radius: var(--radius);
+      padding: 28px;
     }
+
     .template-preview {
       background: linear-gradient(135deg, #1c1c1e, #2a2a2e);
-      border-radius: var(--radius); padding: 32px; text-align: center;
-      color: white; margin-top: 16px;
+      border-radius: var(--radius);
+      padding: 32px;
+      text-align: center;
+      color: white;
+      margin-top: 16px;
     }
-    .template-preview .trophy { font-size: 3rem; margin-bottom: 12px; color: #D4A853; }
-    .template-preview h2 { color: #D4A853; font-size: 1.5rem; margin-bottom: 8px; }
-    .template-preview p  { color: rgba(255,255,255,.7); }
+
+    .template-preview .trophy {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      color: #D4A853;
+    }
+
+    .template-preview h2 {
+      color: #D4A853;
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+    }
+
+    .template-preview p {
+      color: rgba(255, 255, 255, .7);
+    }
   </style>
 </head>
+
 <body>
 
-<nav class="nav">
-  <a href="index.html" class="nav-brand" style="text-decoration:none;">
-    <div class="dot-logo">J</div>
-    Juwi<span>.</span>
-  </a>
-  <div class="nav-links">
-    <span id="phaseTag" class="phase-indicator phase-1">Phase 1: Mass Triage</span>
-    <a href="judge.html"   class="btn btn-outline btn-sm">Judge</a>
-    <a href="student.html" class="btn btn-outline btn-sm">Student</a>
-  </div>
-</nav>
-
-<div class="page-wrap">
-  <!-- PHASE CONTROLLER -->
-  <div class="phase-toggle-card">
-    <div>
-      <h3 style="margin-bottom:4px;">Phase Controller</h3>
-      <p style="font-size:.875rem;">Switch between triage screening and live finals.</p>
+  <nav class="nav"
+    style="display: flex; justify-content: space-between; align-items: center; padding: 16px 32px; background: var(--surface); border-bottom: 1px solid var(--border);">
+    <a href="index.html" class="nav-brand" style="text-decoration:none; display: flex; align-items: baseline;">
+      <span style="font-size:1.5rem; font-weight:800; color:var(--text);">Juwi</span>
+      <span
+        style="color:var(--accent); font-weight:600; font-size:0.75rem; margin-left:6px; letter-spacing:0.05em; text-transform:uppercase;">by
+        DOT</span>
+    </a>
+    <div class="nav-links" style="display: flex; align-items: center; gap: 16px;">
+      <span id="phaseTag" class="phase-indicator phase-1">Phase 1: Mass Triage</span>
+      <a href="judge.html" class="btn btn-outline btn-sm">Judge</a>
+      <a href="student.html" class="btn btn-outline btn-sm">Student</a>
     </div>
-    <div style="display:flex;align-items:center;gap:14px;">
-      <span style="font-size:.875rem;font-weight:600;color:var(--text-2);">Phase 1</span>
-      <label class="toggle" for="phaseToggle">
-        <input type="checkbox" id="phaseToggle">
-        <div class="toggle-track"></div>
-        <div class="toggle-thumb"></div>
-      </label>
-      <span style="font-size:.875rem;font-weight:600;color:var(--text-2);">Phase 2</span>
+  </nav>
+
+  <div class="page-wrap">
+    <!-- PHASE CONTROLLER -->
+    <div class="phase-toggle-card">
+      <div>
+        <h3 style="margin-bottom:4px;">Phase Controller</h3>
+        <p style="font-size:.875rem;">Switch between triage screening and live finals.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <span style="font-size:.875rem;font-weight:600;color:var(--text-2);">Phase 1</span>
+        <label class="toggle" for="phaseToggle">
+          <input type="checkbox" id="phaseToggle">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+        <span style="font-size:.875rem;font-weight:600;color:var(--text-2);">Phase 2</span>
+      </div>
     </div>
-  </div>
 
-  <div class="admin-layout">
-    <!-- SIDEBAR -->
-    <aside class="admin-sidebar">
-      <div class="card card-sm" style="position:sticky;top:80px;">
-        <p style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">Navigation</p>
-        <nav class="sidebar-nav">
-          <div class="sidebar-link active" data-target="setup"><i class="ti ti-clipboard-list"></i> Event Setup</div>
-          <div class="sidebar-link" data-target="rubric"><i class="ti ti-ruler"></i> Rubric Builder</div>
-          <div class="sidebar-link" data-target="triage"><i class="ti ti-cpu"></i> AI Triage</div>
-          <div class="sidebar-link" data-target="branding"><i class="ti ti-palette"></i> Branding &amp; Hype</div>
-        </nav>
-      </div>
-    </aside>
-
-    <!-- MAIN -->
-    <main class="main-content">
-
-      <!-- SETUP PANEL -->
-      <div id="panel-setup" class="section-panel active">
-        <div class="section-header">
-          <h2>Event Setup</h2>
-          <p>Configure the hackathon details and submission requirements.</p>
-        </div>
-        <div class="card">
-          <div class="grid-2">
-            <div class="form-group">
-              <label class="form-label">Hackathon Name</label>
-              <input id="hackName" type="text" class="form-control" placeholder="e.g. BuildFest 2025">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Organizer</label>
-              <input id="organizer" type="text" class="form-control" placeholder="e.g. RKGIT">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Max Teams</label>
-              <input id="maxTeams" type="number" class="form-control" placeholder="e.g. 120" value="60">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Contact Email</label>
-              <input type="email" class="form-control" placeholder="admin@hackathon.com">
-            </div>
-          </div>
-          <div class="divider"></div>
-          <h4 class="mb-16">Submission Requirements</h4>
-          <div style="display:flex;flex-wrap:wrap;gap:12px;">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;font-weight:500;">
-              <input type="checkbox" id="req-ppt" checked style="accent-color:var(--accent);width:16px;height:16px;"> PPT / PDF Presentation
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;font-weight:500;">
-              <input type="checkbox" id="req-abstract" checked style="accent-color:var(--accent);width:16px;height:16px;"> Abstract (written)
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;font-weight:500;">
-              <input type="checkbox" id="req-github" checked style="accent-color:var(--accent);width:16px;height:16px;"> GitHub Repository URL
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;font-weight:500;">
-              <input type="checkbox" id="req-demo" style="accent-color:var(--accent);width:16px;height:16px;"> Demo Video Link
-            </label>
-          </div>
-          <div class="divider"></div>
-          <button class="btn btn-primary" onclick="saveSetup()">Save Configuration ✓</button>
+    <div
+      style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 16px 28px; background: linear-gradient(135deg, var(--surface), var(--surface-2)); border: 1.5px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <i class="ti ti-building-arch" style="font-size: 1.8rem; color: var(--accent);"></i>
+        <div>
+          <h3 style="margin: 0; font-size: 1.1rem;">Active Workspace</h3>
+          <p style="margin: 0; font-size: 0.85rem; color: var(--text-3);">Select which hackathon event to manage.</p>
         </div>
       </div>
+      <select id="hackathonDropdown" class="form-control"
+        style="padding: 10px 16px; font-size: 1rem; min-width: 280px; background: var(--surface); font-weight: 600; cursor: pointer; border-color: var(--accent);"
+        onchange="switchWorkspace(this.value)">
+        <option value="">Loading Events...</option>
+      </select>
+    </div>
 
-      <!-- RUBRIC PANEL -->
-      <div id="panel-rubric" class="section-panel">
-        <div class="section-header">
-          <h2>Dynamic Rubric Builder</h2>
-          <p>Define custom scoring criteria. Each criterion is out of 10 points.</p>
+    <div class="admin-layout">
+      <!-- SIDEBAR -->
+      <aside class="admin-sidebar">
+        <div class="card card-sm" style="position:sticky;top:80px;">
+          <p
+            style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">
+            Navigation</p>
+          <nav class="sidebar-nav">
+            <div class="sidebar-link active" data-target="setup"><i class="ti ti-clipboard-list"></i> Event Setup</div>
+            <div class="sidebar-link" data-target="rubric"><i class="ti ti-ruler"></i> Rubric Builder</div>
+            <div class="sidebar-link" data-target="triage"><i class="ti ti-cpu"></i> AI Triage</div>
+            <div class="sidebar-link" data-target="branding"><i class="ti ti-palette"></i> Branding &amp; Hype</div>
+          </nav>
         </div>
-        <div class="card">
-          <div id="rubric-list"></div>
-          <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
-            <input id="newCriterion" type="text" class="form-control" placeholder="New criterion name (e.g., Innovation)" style="flex:1;min-width:160px;">
-            <button class="btn btn-accent" onclick="addRubricItem()">+ Add Criterion</button>
+      </aside>
+
+      <!-- MAIN -->
+      <main class="main-content">
+
+        <!-- SETUP PANEL -->
+        <div id="panel-setup" class="section-panel active">
+          <div class="section-header">
+            <h2>Event Setup</h2>
+            <p>Configure the hackathon details and submission requirements.</p>
           </div>
-          <div class="divider"></div>
-          <div id="rubric-summary" style="margin-bottom:16px;"></div>
-          <button class="btn btn-primary" onclick="saveRubric()">Lock Rubric →</button>
-        </div>
-      </div>
-
-      <!-- TRIAGE PANEL -->
-      <div id="panel-triage" class="section-panel">
-        <div class="section-header">
-          <h2>AI Phase 1 Triage Dashboard</h2>
-          <p>AI-sorted teams based on submission quality. Review and override freely.</p>
-        </div>
-        <div class="stats-bar">
-          <div class="stat-pill" style="flex:1;"><span class="stat-number" id="st-selected">—</span><span class="stat-label">Selected</span></div>
-          <div class="stat-pill" style="flex:1;"><span class="stat-number" id="st-moderate">—</span><span class="stat-label">Moderate</span></div>
-          <div class="stat-pill" style="flex:1;"><span class="stat-number" id="st-rejected">—</span><span class="stat-label">Rejected</span></div>
-        </div>
-        <div style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="runTriage()"><i class="ti ti-cpu"></i> Run AI Triage</button>
-          <div class="tab-bar" id="triage-filter">
-            <div class="tab-item active" data-filter="all">All</div>
-            <div class="tab-item" data-filter="selected">Selected</div>
-            <div class="tab-item" data-filter="moderate">Moderate</div>
-            <div class="tab-item" data-filter="rejected">Rejected</div>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th><th>Team Name</th><th>College</th><th>Tech Stack</th><th>AI Score</th><th>Status</th><th>Override</th>
-              </tr>
-            </thead>
-            <tbody id="triage-tbody">
-              <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-3);">Click "Run AI Triage" to load results.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- BRANDING PANEL -->
-      <div id="panel-branding" class="section-panel">
-        <div class="section-header">
-          <h2>Branding &amp; Hype Engine</h2>
-          <p>Schedule result releases, set themes, and craft the victory banner.</p>
-        </div>
-
-        <!-- Scheduler -->
-        <div class="card mb-24">
-          <h3 class="mb-16"><i class="ti ti-clock"></i> Results Unlock Scheduler</h3>
-          <div class="results-unlock-form">
-            <div class="scheduler-grid">
-              <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Unlock Date</label>
-                <input id="unlockDate" type="date" class="form-control">
+          <div class="card">
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Hackathon Name</label>
+                <input id="hackName" type="text" class="form-control" placeholder="e.g. BuildFest 2025">
               </div>
-              <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Unlock Time</label>
-                <input id="unlockTime" type="time" class="form-control" value="09:00">
+              <div class="form-group">
+                <label class="form-label">Organizer</label>
+                <input id="organizer" type="text" class="form-control" placeholder="e.g. RKGIT">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Max Teams</label>
+                <input id="maxTeams" type="number" class="form-control" placeholder="e.g. 120" value="60">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Contact Email</label>
+                <input type="email" class="form-control" placeholder="admin@hackathon.com">
               </div>
             </div>
-            <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;">
-              <button class="btn btn-accent" onclick="scheduleResults()"><i class="ti ti-send"></i> Schedule Go-Live</button>
-              <button class="btn btn-danger btn-sm" onclick="unlockNow()">Unlock Now (Test)</button>
+            <div class="divider"></div>
+            <h4 class="mb-16">Submission Requirements</h4>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;font-weight:500;">
+                <input type="checkbox" id="req-ppt" checked style="accent-color:var(--accent);width:16px;height:16px;">
+                PPT / PDF Presentation
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;font-weight:500;">
+                <input type="checkbox" id="req-abstract" checked
+                  style="accent-color:var(--accent);width:16px;height:16px;"> Abstract (written)
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;font-weight:500;">
+                <input type="checkbox" id="req-github" checked
+                  style="accent-color:var(--accent);width:16px;height:16px;"> GitHub Repository URL
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;font-weight:500;">
+                <input type="checkbox" id="req-demo" style="accent-color:var(--accent);width:16px;height:16px;"> Demo
+                Video Link
+              </label>
             </div>
-            <div id="schedule-status" style="margin-top:14px;font-size:.875rem;color:var(--accent);font-weight:600;"></div>
+            <div class="divider"></div>
+            <button class="btn btn-primary" onclick="saveSetup()">Save Configuration ✓</button>
           </div>
         </div>
 
-        <!-- Theme -->
-        <div class="card mb-24">
-          <h3 class="mb-16"><i class="ti ti-palette"></i> Student Page Theme</h3>
-          <div class="theme-swatches">
-            <div class="swatch active" data-palette="warm"    style="background:linear-gradient(135deg,#C17B5C,#D4A853);" title="Warm Terracotta"></div>
-            <div class="swatch"        data-palette="ocean"   style="background:linear-gradient(135deg,#5C7BC1,#5FAD8A);" title="Ocean Teal"></div>
-            <div class="swatch"        data-palette="midnight" style="background:linear-gradient(135deg,#1c1c1e,#5C7BC1);" title="Midnight Blue"></div>
-            <div class="swatch"        data-palette="rose"    style="background:linear-gradient(135deg,#C15C8A,#D4A853);" title="Rose Gold"></div>
-            <div class="swatch"        data-palette="forest"  style="background:linear-gradient(135deg,#4A7C59,#A3B899);" title="Forest Sage"></div>
+        <!-- RUBRIC PANEL -->
+        <div id="panel-rubric" class="section-panel">
+          <div class="section-header">
+            <h2>Dynamic Rubric Builder</h2>
+            <p>Define custom scoring criteria. Each criterion is out of 10 points.</p>
           </div>
-          <p style="font-size:.8rem;color:var(--text-3);margin-top:12px;">Selected palette will be applied to the student results page.</p>
-        </div>
-
-        <!-- Template Editor -->
-        <div class="card">
-          <h3 class="mb-16"><i class="ti ti-trophy"></i> Congratulatory Banner Template</h3>
-          <div class="form-group">
-            <label class="form-label">Banner Message Template</label>
-            <textarea id="bannerTemplate" class="form-control" rows="3">We Congratulate [Team] on achieving [Rank] Prize in [Hackathon] organized by [Organizer]!</textarea>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="previewBanner()">Preview Banner</button>
-          <div id="banner-preview-wrap" class="template-preview" style="display:none;">
-            <div class="trophy"><i class="ti ti-trophy"></i></div>
-            <h2 id="banner-preview-text">Preview text here</h2>
-            <p>presented by Juwi · AI-Augmented Judging</p>
+          <div class="card">
+            <div id="rubric-list"></div>
+            <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
+              <input id="newCriterion" type="text" class="form-control"
+                placeholder="New criterion name (e.g., Innovation)" style="flex:1;min-width:160px;">
+              <button class="btn btn-accent" onclick="addRubricItem()">+ Add Criterion</button>
+            </div>
+            <div class="divider"></div>
+            <div id="rubric-summary" style="margin-bottom:16px;"></div>
+            <button class="btn btn-primary" onclick="saveRubric()">Lock Rubric →</button>
           </div>
         </div>
-      </div>
 
-    </main>
+        <!-- TRIAGE PANEL -->
+        <div id="panel-triage" class="section-panel">
+          <div class="section-header">
+            <h2>AI Phase 1 Triage Dashboard</h2>
+            <p>AI-sorted teams based on submission quality. Review and override freely.</p>
+          </div>
+          <div class="stats-bar">
+            <div class="stat-pill" style="flex:1;"><span class="stat-number" id="st-selected">—</span><span
+                class="stat-label">Selected</span></div>
+            <div class="stat-pill" style="flex:1;"><span class="stat-number" id="st-moderate">—</span><span
+                class="stat-label">Moderate</span></div>
+            <div class="stat-pill" style="flex:1;"><span class="stat-number" id="st-rejected">—</span><span
+                class="stat-label">Rejected</span></div>
+          </div>
+          <div style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="runTriage()"><i class="ti ti-cpu"></i> Run AI Triage</button>
+            <div class="tab-bar" id="triage-filter">
+              <div class="tab-item active" data-filter="all">All</div>
+              <div class="tab-item" data-filter="selected">Selected</div>
+              <div class="tab-item" data-filter="moderate">Moderate</div>
+              <div class="tab-item" data-filter="rejected">Rejected</div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Team Name</th>
+                  <th>College</th>
+                  <th>Tech Stack</th>
+                  <th>AI Score</th>
+                  <th>Status</th>
+                  <th>Override</th>
+                </tr>
+              </thead>
+              <tbody id="triage-tbody">
+                <tr>
+                  <td colspan="7" style="text-align:center;padding:40px;color:var(--text-3);">Click "Run AI Triage" to
+                    load results.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- BRANDING PANEL -->
+        <div id="panel-branding" class="section-panel">
+          <div class="section-header">
+            <h2>Branding &amp; Hype Engine</h2>
+            <p>Schedule result releases, set themes, and craft the victory banner.</p>
+          </div>
+
+          <!-- Scheduler -->
+          <div class="card mb-24">
+            <h3 class="mb-16"><i class="ti ti-clock"></i> Results Unlock Scheduler</h3>
+            <div class="results-unlock-form">
+              <div class="scheduler-grid">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Unlock Date</label>
+                  <input id="unlockDate" type="date" class="form-control">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Unlock Time</label>
+                  <input id="unlockTime" type="time" class="form-control" value="09:00">
+                </div>
+              </div>
+              <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;">
+                <button class="btn btn-accent" onclick="scheduleResults()"><i class="ti ti-send"></i> Schedule
+                  Go-Live</button>
+                <button class="btn btn-danger btn-sm" onclick="unlockNow()">Unlock Now (Test)</button>
+              </div>
+              <div id="schedule-status" style="margin-top:14px;font-size:.875rem;color:var(--accent);font-weight:600;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Theme -->
+          <div class="card mb-24">
+            <h3 class="mb-16"><i class="ti ti-palette"></i> Student Page Theme</h3>
+            <div class="theme-swatches">
+              <div class="swatch active" data-palette="warm" style="background:linear-gradient(135deg,#C17B5C,#D4A853);"
+                title="Warm Terracotta"></div>
+              <div class="swatch" data-palette="ocean" style="background:linear-gradient(135deg,#5C7BC1,#5FAD8A);"
+                title="Ocean Teal"></div>
+              <div class="swatch" data-palette="midnight" style="background:linear-gradient(135deg,#1c1c1e,#5C7BC1);"
+                title="Midnight Blue"></div>
+              <div class="swatch" data-palette="rose" style="background:linear-gradient(135deg,#C15C8A,#D4A853);"
+                title="Rose Gold"></div>
+              <div class="swatch" data-palette="forest" style="background:linear-gradient(135deg,#4A7C59,#A3B899);"
+                title="Forest Sage"></div>
+            </div>
+            <p style="font-size:.8rem;color:var(--text-3);margin-top:12px;">Selected palette will be applied to the
+              student results page.</p>
+          </div>
+
+          <!-- Template Editor -->
+          <div class="card">
+            <h3 class="mb-16"><i class="ti ti-trophy"></i> Congratulatory Banner Template</h3>
+            <div class="form-group">
+              <label class="form-label">Banner Message Template</label>
+              <textarea id="bannerTemplate" class="form-control"
+                rows="3">We Congratulate [Team] on achieving [Rank] Prize in [Hackathon] organized by [Organizer]!</textarea>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="previewBanner()">Preview Banner</button>
+            <div id="banner-preview-wrap" class="template-preview" style="display:none;">
+              <div class="trophy"><i class="ti ti-trophy"></i></div>
+              <h2 id="banner-preview-text">Preview text here</h2>
+              <p>presented by Juwi · AI-Augmented Judging</p>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
   </div>
-</div>
 
-<div id="toast-container"></div>
-<script src="admin.js"></script>
+  <div id="toast-container"></div>
+  <script src="admin.js"></script>
 </body>
+
 </html>

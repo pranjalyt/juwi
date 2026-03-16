@@ -18,19 +18,65 @@ const state = {
   countdownInterval: null,
 };
 
-// ── Mocked Team Data ──────────────────────────────────────────
-const MOCK_TEAMS = [
-  { id: 1, name: 'Team Rocket', college: 'RKGIT', stack: 'React, FastAPI, OpenAI', score: 88, status: 'selected' },
-  { id: 2, name: 'Null Pointers', college: 'IIT Delhi', stack: 'Next.js, Rust, PostgreSQL', score: 76, status: 'selected' },
-  { id: 3, name: 'ByteForce', college: 'NIT Agra', stack: 'Vue.js, Django, Redis', score: 61, status: 'moderate' },
-  { id: 4, name: 'AlgoAlchemists', college: 'RKGIT', stack: 'Flutter, Firebase', score: 55, status: 'moderate' },
-  { id: 5, name: 'Stack Overflow', college: 'AKTU', stack: 'HTML, CSS, JS', score: 49, status: 'moderate' },
-  { id: 6, name: 'Quantum Leap', college: 'IIT Kanpur', stack: 'PyTorch, FastAPI, Next.js', score: 92, status: 'selected' },
-  { id: 7, name: 'The Debuggers', college: 'GLA Univ', stack: 'Spring Boot, Angular', score: 35, status: 'rejected' },
-  { id: 8, name: 'Ctrl+Alt+Del', college: 'AKTU', stack: 'WordPress', score: 22, status: 'rejected' },
-  { id: 9, name: 'Kernel Panic', college: 'NIT Agra', stack: 'Go, gRPC, React', score: 81, status: 'selected' },
-  { id: 10, name: 'Zero Day', college: 'IIT Delhi', stack: 'C++, Qt, MQTT', score: 44, status: 'rejected' },
-];
+// // ── Mocked Team Data ──────────────────────────────────────────
+// const MOCK_TEAMS = [
+//   { id: 1, name: 'Team Rocket', college: 'RKGIT', stack: 'React, FastAPI, OpenAI', score: 88, status: 'selected' },
+//   { id: 2, name: 'Null Pointers', college: 'IIT Delhi', stack: 'Next.js, Rust, PostgreSQL', score: 76, status: 'selected' },
+//   { id: 3, name: 'ByteForce', college: 'NIT Agra', stack: 'Vue.js, Django, Redis', score: 61, status: 'moderate' },
+//   { id: 4, name: 'AlgoAlchemists', college: 'RKGIT', stack: 'Flutter, Firebase', score: 55, status: 'moderate' },
+//   { id: 5, name: 'Stack Overflow', college: 'AKTU', stack: 'HTML, CSS, JS', score: 49, status: 'moderate' },
+//   { id: 6, name: 'Quantum Leap', college: 'IIT Kanpur', stack: 'PyTorch, FastAPI, Next.js', score: 92, status: 'selected' },
+//   { id: 7, name: 'The Debuggers', college: 'GLA Univ', stack: 'Spring Boot, Angular', score: 35, status: 'rejected' },
+//   { id: 8, name: 'Ctrl+Alt+Del', college: 'AKTU', stack: 'WordPress', score: 22, status: 'rejected' },
+//   { id: 9, name: 'Kernel Panic', college: 'NIT Agra', stack: 'Go, gRPC, React', score: 81, status: 'selected' },
+//   { id: 10, name: 'Zero Day', college: 'IIT Delhi', stack: 'C++, Qt, MQTT', score: 44, status: 'rejected' },
+// ];
+
+
+// ── Workspace/Hackathon Switcher ──────────────────────────────
+async function loadWorkspaces() {
+  const dd = document.getElementById('hackathonDropdown');
+  try {
+    // 1. Get the currently active hackathon
+    const activeRes = await fetch("http://127.0.0.1:8000/api/admin/current-hackathon");
+    if (!activeRes.ok) throw new Error("Backend offline");
+    const activeData = await activeRes.json();
+    const current = activeData.active_hackathon;
+
+    // 2. Get the list of ALL hackathons that have teams
+    const listRes = await fetch("http://127.0.0.1:8000/api/admin/hackathons");
+    const listData = await listRes.json();
+
+    // 3. THE FIX: Merge them! Guarantee the 'current' one is always in the list.
+    const allHacks = new Set(listData.hackathons);
+    allHacks.add(current);
+    const uniqueHacks = Array.from(allHacks);
+
+    // 4. Populate the dropdown
+    dd.innerHTML = uniqueHacks.map(h =>
+      `<option value="${h}" ${h === current ? 'selected' : ''}>${h}</option>`
+    ).join('');
+
+  } catch (e) {
+    console.error(e);
+    dd.innerHTML = `<option value="">⚠️ Server Offline</option>`;
+  }
+}
+
+async function switchWorkspace(name) {
+  if (!name) return;
+  await fetch("http://127.0.0.1:8000/api/admin/set-hackathon", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hackathon_name: name })
+  });
+
+  toast(`Workspace switched to: ${name}`, 'success');
+
+  // Update the Setup Input box so it matches
+  document.getElementById('hackName').value = name;
+
+  // Refresh the table data!
+  runTriage();
+}
 
 // ── Toast ─────────────────────────────────────────────────────
 function toast(msg, type = 'default') {
@@ -70,10 +116,13 @@ phaseToggle.addEventListener('change', () => {
 });
 
 // ── Setup ─────────────────────────────────────────────────────
-function saveSetup() {
+async function saveSetup() {
   const name = document.getElementById('hackName').value.trim();
   const org = document.getElementById('organizer').value.trim();
+  runTriage();
+  loadWorkspaces();
   if (!name || !org) { toast('Please fill in all required fields.', 'danger'); return; }
+
   const config = {
     hackName: name,
     organizer: org,
@@ -83,8 +132,36 @@ function saveSetup() {
     reqGithub: document.getElementById('req-github').checked,
     reqDemo: document.getElementById('req-demo').checked,
   };
+
+  // 1. Save UI settings locally
   localStorage.setItem('juwi_config', JSON.stringify(config));
-  toast('✓ Event configuration saved!', 'success');
+
+  try {
+    // 2. TELL THE PYTHON BRAIN TO SWITCH HACKATHONS
+    await fetch("http://127.0.0.1:8000/api/admin/set-hackathon", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hackathon_name: name })
+    });
+
+    // 3. Reset the Phase Switch to Phase 1
+    document.getElementById('phaseToggle').checked = false;
+    document.getElementById('phaseTag').textContent = 'Phase 1: Mass Triage';
+    document.getElementById('phaseTag').className = 'phase-indicator phase-1';
+    localStorage.setItem('juwi_phase', 1);
+
+    // 4. Clear the Student's locked screen so they can submit to the new event
+    localStorage.removeItem('juwi_student_submission');
+
+    // 5. Refresh the Admin tables (They will instantly turn blank for the new event!)
+    loadDashboardStats();
+    loadModerateQueue();
+
+    toast(`✓ Workspace switched to: ${name}`, 'success');
+  } catch (e) {
+    console.error(e);
+    toast("Backend offline. Could not switch hackathon.", "danger");
+  }
 }
 
 // ── Rubric ────────────────────────────────────────────────────
@@ -290,3 +367,5 @@ const savedConfig = JSON.parse(localStorage.getItem('juwi_config') || '{}');
 if (savedConfig.hackName) document.getElementById('hackName').value = savedConfig.hackName;
 if (savedConfig.organizer) document.getElementById('organizer').value = savedConfig.organizer;
 if (savedConfig.maxTeams) document.getElementById('maxTeams').value = savedConfig.maxTeams;
+
+loadWorkspaces();

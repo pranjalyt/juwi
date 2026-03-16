@@ -409,33 +409,42 @@ function renderPhase1Results() {
 
   fireConfetti();
 
-  let listHTML = selectedTeams.map(t => `
-    <div class="card pop-in" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent);">
-      <div>
-        <h3 style="margin-bottom: 4px;">${t.name}</h3>
-        <p style="font-size: 0.85rem; color: var(--text-2);">${t.college}</p>
+  let listHTML = selectedTeams.map((t, i) => `
+    <div class="jw-team-row" style="animation-delay:${i * 0.045}s">
+      <div class="jw-team-row-left">
+        <div class="jw-team-index">${String(i + 1).padStart(2, '0')}</div>
+        <div class="jw-team-info">
+          <div class="jw-team-name">${t.name}</div>
+          <div class="jw-team-college">${t.college}</div>
+        </div>
       </div>
-      <span class="badge badge-success"><i class="ti ti-check"></i> Selected</span>
+      <span class="jw-selected-pill">Selected</span>
     </div>
   `).join('');
 
-  if (selectedTeams.length === 0) listHTML = `<p style="text-align:center; color: var(--text-3);">No teams have been selected yet.</p>`;
+  if (selectedTeams.length === 0) {
+    listHTML = `<div class="jw-p1-empty"><i class="ti ti-inbox" style="font-size:2rem;display:block;margin-bottom:10px;"></i>No teams have been selected yet.</div>`;
+  }
 
   document.getElementById('mainWrap').innerHTML = `
-    <div style="text-align: center; margin-bottom: 40px; padding: 40px 20px; background: linear-gradient(135deg, var(--surface-2), var(--surface)); border-radius: var(--radius); border: 1px solid var(--border);">
-      <div style="font-size: 3rem; color: var(--accent); margin-bottom: 15px;">🎉</div>
-      <h1 style="font-size: 2.2rem; margin-bottom: 10px;">Phase 1 Results are Out!</h1>
-      <p style="color: var(--text-2); font-size: 1.1rem; max-width: 600px; margin: 0 auto;">
-        <strong>${organizer}</strong> congratulates the following teams for making it through the AI Triage. Prepare for Phase 2!
-      </p>
-    </div>
-    
-    <div style="display: grid; gap: 12px; max-width: 800px; margin: 0 auto;">
-      ${listHTML}
-    </div>
+    <div class="jw-p1-wrap">
+      <div class="jw-p1-hero">
+        <span class="jw-p1-emoji">🎉</span>
+        <div class="jw-p1-title">Phase 1 Results are Out!</div>
+        <p class="jw-p1-subtitle">
+          <strong>${organizer}</strong> congratulates the following teams for making it through the AI Triage. Prepare for Phase 2!
+        </p>
+      </div>
 
-    <div style="margin-top:40px;text-align:center;">
-      <button class="btn btn-outline" onclick="resetStudent()">Submit Another Team (Demo Reset)</button>
+      <div class="jw-p1-section-label">${selectedTeams.length} team${selectedTeams.length !== 1 ? 's' : ''} selected &nbsp;·&nbsp; Advancing to Phase 2</div>
+
+      ${listHTML}
+
+      <div class="jw-reset-wrap">
+        <button class="jw-reset-btn" onclick="resetStudent()">
+          <i class="ti ti-refresh"></i> Submit Another Team (Demo Reset)
+        </button>
+      </div>
     </div>
   `;
 }
@@ -450,8 +459,9 @@ function renderPhase2Results() {
   document.getElementById('statusBadge').className = 'badge badge-success';
 
   const rankedTeams = [...ALL_RESULTS].sort((a, b) => {
-    const scoreA = a.phase2_total !== null ? a.phase2_total : -1;
-    const scoreB = b.phase2_total !== null ? b.phase2_total : -1;
+    // Phase2 score takes priority; fall back to Phase1 score so podium always renders
+    const scoreA = (a.phase2_total !== null && a.phase2_total !== undefined) ? a.phase2_total : (a.score ?? -1);
+    const scoreB = (b.phase2_total !== null && b.phase2_total !== undefined) ? b.phase2_total : (b.score ?? -1);
     return scoreB - scoreA;
   });
 
@@ -460,26 +470,47 @@ function renderPhase2Results() {
   fireConfetti();
   setTimeout(fireConfetti, 1200);
 
-  let podiumHTML = `<div class="podium-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px;">`;
+  // ── Build the staggered podium ────────────────────────────────
+  // Layout order: 2nd (left) · 1st (centre) · 3rd (right)
+  const slotOrder = [1, 0, 2]; // visual order indices into top3
+  const rankLabels = ['1st', '2nd', '3rd'];
+  const medals = ['🏆', '🥈', '🥉'];
+  const rankClasses = ['rank-1', 'rank-2', 'rank-3'];
+  const baseClasses = ['h-1', 'h-2', 'h-3'];
 
-  top3.forEach((team, index) => {
-    if (team.phase2_total === null) return;
-    const rankStr = index === 0 ? '1st' : index === 1 ? '2nd' : '3rd';
-    const bannerText = tplRaw.replace('[Team]', team.name).replace('[Rank]', rankStr).replace('[Hackathon]', cfg.hackName || 'Hackathon').replace('[Organizer]', cfg.organizer || 'Juwi');
-    const bg = index === 0 ? `linear-gradient(135deg,${pal.from},${pal.to})` : 'var(--surface-2)';
-    const color = index === 0 ? 'white' : 'var(--text)';
+  let podiumSlotsHTML = '';
+  slotOrder.forEach(idx => {
+    const team = top3[idx];
+    if (!team) return; // only skip if the slot truly doesn't exist
 
-    podiumHTML += `
-      <div class="card text-center pop-in" style="background: ${bg}; color: ${color}; border: ${index === 0 ? 'none' : '1px solid var(--border)'};">
-        <div style="font-size: 3rem; margin-bottom: 10px;">${index === 0 ? '🏆' : index === 1 ? '🥈' : '🥉'}</div>
-        <h3 style="color: ${color};">${team.name}</h3>
-        <p style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 15px;">${rankStr} Place Champion</p>
-        ${index === 0 ? `<p style="font-weight: 700; font-size: 0.9rem;">${bannerText}</p>` : ''}
-        <div style="margin-top: 15px; font-weight: 900; font-size: 1.5rem;">${team.phase2_total} <span style="font-size: 0.8rem; font-weight: 500; opacity: 0.7;">/50 pts</span></div>
+    // Use phase2 score if available, otherwise fall back to phase1 score
+    const hasPhase2 = team.phase2_total !== null && team.phase2_total !== undefined;
+    const displayScore = hasPhase2 ? team.phase2_total : (team.score ?? '—');
+    const scoreLabel  = hasPhase2 ? '/50 pts' : 'phase 1 pts';
+
+    const rankStr    = rankLabels[idx];
+    const bannerText = tplRaw
+      .replace('[Team]', team.name)
+      .replace('[Rank]', rankStr)
+      .replace('[Hackathon]', cfg.hackName || 'Hackathon')
+      .replace('[Organizer]', cfg.organizer || 'Juwi');
+
+    podiumSlotsHTML += `
+      <div class="jw-podium-slot">
+        <div class="jw-podium-card ${rankClasses[idx]}">
+          <span class="jw-podium-medal">${medals[idx]}</span>
+          <div class="jw-podium-rank-label">${rankStr} Place</div>
+          <div class="jw-podium-name">${team.name}</div>
+          <div class="jw-podium-score">
+            <span class="jw-podium-score-num">${displayScore}</span>
+            <span class="jw-podium-score-label">${scoreLabel}</span>
+          </div>
+          ${idx === 0 ? `<div class="jw-podium-banner">${bannerText}</div>` : ''}
+        </div>
+        <div class="jw-podium-base ${baseClasses[idx]}">${rankStr[0]}</div>
       </div>
     `;
   });
-  podiumHTML += `</div>`;
 
   const alphabetizedTeams = [...ALL_RESULTS].sort((a, b) => a.name.localeCompare(b.name));
   let optionsHTML = `<option value="">Select your team name...</option>`;
@@ -488,33 +519,49 @@ function renderPhase2Results() {
   });
 
   document.getElementById('mainWrap').innerHTML = `
-    <div style="text-align: center; margin-bottom: 30px;">
-      <h1 style="font-size: 2.5rem; margin-bottom: 10px;">Hackathon Results</h1>
-      <p style="color: var(--text-2);">Congratulations to everyone who participated. Building something from scratch is the real victory.</p>
-    </div>
+    <div class="jw-p2-wrap">
 
-    ${podiumHTML}
+      <!-- Header -->
+      <div class="jw-p2-header">
+        <div class="jw-p2-title">Hackathon Results</div>
+        <p class="jw-p2-subtitle">Congratulations to everyone who participated. Building something from scratch is the real victory.</p>
+      </div>
 
-    <div class="divider"></div>
+      <!-- 3-D Staggered Podium -->
+      <div class="jw-podium-stage">
+        ${podiumSlotsHTML}
+      </div>
 
-    <div style="text-align: center; margin-top: 40px;">
-      <button class="btn btn-primary btn-lg" onclick="document.getElementById('remarksSection').style.display='block'; this.style.display='none';">
-        <i class="ti ti-scan"></i> Show My Remarks & AI Feedback
-      </button>
-    </div>
+      <!-- Feedback section -->
+      <div class="jw-feedback-section">
 
-    <div id="remarksSection" class="card pop-in" style="display: none; margin-top: 20px; background: linear-gradient(to bottom, var(--surface), var(--surface-2));">
-      <h2 style="text-align: center; margin-bottom: 20px;">Analyze Your Performance</h2>
-      <select id="teamFeedbackSelect" class="form-control" style="max-width: 400px; margin: 0 auto 30px; display: block; font-size: 1.1rem; padding: 12px;" onchange="triggerAIAnalysis(this.value)">
-        ${optionsHTML}
-      </select>
-
-      <div id="feedbackContainer" style="display: none; padding-top: 20px; border-top: 1px dashed var(--border);">
+        <div style="text-align:center;">
+          <button class="jw-feedback-reveal-btn" onclick="document.getElementById('remarksSection').style.display='block'; this.style.display='none';">
+            <i class="ti ti-scan"></i> Show My Remarks &amp; AI Feedback
+          </button>
         </div>
-    </div>
 
-    <div style="margin-top:40px;text-align:center;">
-      <button class="btn btn-outline" onclick="resetStudent()">Submit Another Team (Demo Reset)</button>
+        <div id="remarksSection" style="display:none;">
+          <div class="jw-remarks-card">
+            <div class="jw-remarks-heading">Analyze Your Performance</div>
+            <div class="jw-separator"></div>
+            <div class="jw-select-wrap">
+              <select id="teamFeedbackSelect" class="jw-feedback-select" onchange="triggerAIAnalysis(this.value)">
+                ${optionsHTML}
+              </select>
+            </div>
+            <div id="feedbackContainer" style="display:none;"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="jw-reset-wrap">
+        <button class="jw-reset-btn" onclick="resetStudent()">
+          <i class="ti ti-refresh"></i> Submit Another Team (Demo Reset)
+        </button>
+      </div>
+
     </div>
   `;
 }
@@ -536,27 +583,29 @@ async function triggerAIAnalysis(teamId) {
   container.style.display = 'block';
   container.className = 'pop-in';
   container.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+    <div class="jw-fc-header">
       <div>
-        <h3 style="margin-bottom: 4px; color: var(--accent);">${team.name}</h3>
-        <span class="badge ${isFinalist ? 'badge-success' : 'badge-neutral'}">${isFinalist ? 'Phase 2 Finalist' : 'Phase 1 Participant'}</span>
+        <div class="jw-fc-name">${team.name}</div>
+        <span class="${isFinalist ? 'jw-fc-badge-finalist' : 'jw-fc-badge-participant'}">${isFinalist ? 'Phase 2 Finalist' : 'Phase 1 Participant'}</span>
       </div>
-      <div style="text-align: right;">
-        <div style="font-size: 1.8rem; font-weight: 800; line-height: 1;">${isFinalist ? team.phase2_total : team.score}</div>
-        <div style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase;">${isFinalist ? 'Final Points' : 'Triage Score'}</div>
+      <div class="jw-fc-score-display">
+        <div class="jw-fc-score-num">${isFinalist ? team.phase2_total : team.score}</div>
+        <div class="jw-fc-score-label">${isFinalist ? 'Final Points' : 'Triage Score'}</div>
       </div>
     </div>
 
     ${team.remarks ? `
-    <div class="card mb-16" style="background: var(--surface); border-left: 3px solid var(--accent);">
-      <h4 style="margin-bottom: 8px;"><i class="ti ti-message-2"></i> Judge's Live Remarks</h4>
-      <p style="font-size: 1.05rem; font-style: italic; color: var(--text-2);">"${team.remarks}"</p>
+    <div class="jw-remarks-block">
+      <div class="jw-remarks-block-label"><i class="ti ti-message-2"></i> Judge's Remarks</div>
+      <div class="jw-remarks-block-text">&ldquo;${team.remarks}&rdquo;</div>
     </div>` : ''}
 
-    <div id="ai-deep-dive" style="text-align:center; padding: 40px 20px; background: var(--surface-2); border-radius: var(--radius-sm); border: 1px dashed var(--accent);">
-      <i class="ti ti-scan" style="font-size: 2.5rem; color: var(--accent); animation: pulse 1.5s infinite;"></i>
-      <h3 style="margin-top: 15px;">AI is scanning the repository...</h3>
-      <p style="color: var(--text-3); font-size: 0.9rem;">Generating personalized pros, cons, and improvement vectors.</p>
+    <div id="ai-deep-dive" class="jw-ai-panel">
+      <div class="jw-ai-panel-loading">
+        <i class="ti ti-scan jw-ai-panel-loading-icon"></i>
+        <h3>AI is scanning the repository...</h3>
+        <p>Generating personalized pros, cons, and improvement vectors.</p>
+      </div>
     </div>
   `;
 
@@ -576,21 +625,21 @@ async function triggerAIAnalysis(teamId) {
 
     // 3. Inject the AI Results
     document.getElementById('ai-deep-dive').innerHTML = `
-      <h3 style="margin-bottom: 16px; text-align: left;"><i class="ti ti-cpu"></i> Deep AI Repository Analysis</h3>
+      <div class="jw-ai-panel-title"><i class="ti ti-cpu"></i> Deep AI Repository Analysis</div>
       <div class="feedback-grid" style="text-align: left;">
-        <div class="feedback-card" style="background: var(--surface);">
-          <h4 style="margin-bottom: 8px;"><i class="ti ti-circle-check" style="color:var(--success);"></i> Strengths Identified</h4>
+        <div class="feedback-card">
+          <h4 style="margin-bottom: 8px; color:#5fdb90;"><i class="ti ti-circle-check"></i> Strengths Identified</h4>
           <p class="feedback-content" style="white-space: pre-line;">${aiData.pros || '• Solid fundamental structure'}</p>
         </div>
         
-        <div class="feedback-card" style="background: var(--surface);">
-          <h4 style="margin-bottom: 8px;"><i class="ti ti-alert-triangle" style="color:var(--danger);"></i> Areas for Improvement</h4>
+        <div class="feedback-card">
+          <h4 style="margin-bottom: 8px; color:#e06060;"><i class="ti ti-alert-triangle"></i> Areas for Improvement</h4>
           <p class="feedback-content" style="white-space: pre-line;">${aiData.cons || '• Testing coverage could be improved'}</p>
         </div>
         
-        <div class="feedback-card" style="background: var(--surface); grid-column: 1 / -1;">
-          <h4 style="margin-bottom: 8px;"><i class="ti ti-rocket" style="color:var(--accent-3);"></i> Suggested Next Steps</h4>
-          <ul style="padding-left: 20px; color: var(--text-2); font-size: 0.9rem;">
+        <div class="feedback-card" style="grid-column: 1 / -1;">
+          <h4 style="margin-bottom: 8px; color:#d4a853;"><i class="ti ti-rocket"></i> Suggested Next Steps</h4>
+          <ul style="padding-left: 20px; color: rgba(200,200,220,0.8); font-size: 0.9rem;">
             ${(aiData.questions || [{ q: "Implement robust CI/CD pipelines." }]).map(q => `<li style="margin-bottom: 6px;">${q.q}</li>`).join('')}
           </ul>
         </div>
@@ -599,8 +648,11 @@ async function triggerAIAnalysis(teamId) {
   } catch (err) {
     console.error("AI Analysis failed:", err);
     document.getElementById('ai-deep-dive').innerHTML = `
-      <h4 style="color: var(--danger);"><i class="ti ti-alert-circle"></i> AI Analysis Unavailable</h4>
-      <p style="color: var(--text-3); font-size: 0.9rem;">Could not reach the repository or backend AI engine.</p>
+      <div class="jw-ai-panel-loading">
+        <i class="ti ti-alert-circle" style="font-size:2rem;color:#e06060;display:block;margin-bottom:10px;animation:none;"></i>
+        <h3 style="color:#e06060;">AI Analysis Unavailable</h3>
+        <p>Could not reach the repository or backend AI engine.</p>
+      </div>
     `;
   }
 }

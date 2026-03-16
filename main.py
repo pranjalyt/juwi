@@ -627,15 +627,15 @@ async def ai_triage_submission(sub: RawSubmission):
         c = conn.cursor()
         
         bullets_json = json.dumps(data.get("bullets", []))
+        active_hack = global_state["active_hackathon"]
         
-        # FIXED LINE: We replaced "Web Submission" with sub.college
         c.execute('''
             INSERT INTO submissions (
-                id, name, college, abstract, stack, github, verified_stack, bucket, status,
+                id, hackathon_name, name, college, abstract, stack, github, verified_stack, bucket, status,
                 score, code_quality, tech_depth, presentation, complexity_score, bullets
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            str(sub.id), sub.name, sub.college, sub.description, sub.stack, 
+            str(sub.id), active_hack, sub.name, sub.college, sub.description, sub.stack, 
             sub.github if sub.github else "#", "Verified (Deep Scrape)", 
             final_bucket, "pending",
             score, data.get("code_quality", 50),
@@ -663,6 +663,34 @@ async def ai_triage_submission(sub: RawSubmission):
 # ============================================================
 import sqlite3
 
+# --- THE CENTRAL BRAIN ---
+# This holds the active state of the demo across all devices
+global_state = {
+    "active_hackathon": "Default Hackathon"
+}
+
+@app.post("/api/admin/set-hackathon")
+async def set_active_hackathon(request: Request):
+    global global_state
+    data = await request.json()
+    if "hackathon_name" in data:
+        global_state["active_hackathon"] = data["hackathon_name"]
+        print(f"🌐 [GLOBAL STATE] Active Hackathon switched to: {global_state['active_hackathon']}")
+    return {"status": "success", "active_hackathon": global_state["active_hackathon"]}
+
+@app.get("/api/admin/current-hackathon")
+async def get_active_hackathon():
+    return {"status": "success", "active_hackathon": global_state["active_hackathon"]}
+
+@app.get("/api/admin/hackathons")
+async def get_all_hackathons():
+    conn = get_db_connection()
+    # Get all unique hackathon names from the database
+    hacks = conn.execute("SELECT DISTINCT hackathon_name FROM submissions").fetchall()
+    conn.close()
+    return {"status": "success", "hackathons": [h["hackathon_name"] for h in hacks if h["hackathon_name"]]}
+# -------------------------
+
 def get_db_connection():
     # check_same_thread=False allows FastAPI to use SQLite smoothly across requests
     conn = sqlite3.connect('hackathon.db', check_same_thread=False)
@@ -672,9 +700,11 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     c = conn.cursor()
+    # UPGRADE: Added 'hackathon_name' column to support multiple events!
     c.execute('''
         CREATE TABLE IF NOT EXISTS submissions (
             id TEXT PRIMARY KEY,
+            hackathon_name TEXT DEFAULT 'Default Hackathon',
             name TEXT NOT NULL,
             college TEXT DEFAULT 'Web Submission',
             abstract TEXT,
@@ -693,9 +723,16 @@ def init_db():
             remarks TEXT
         )
     ''')
+    
+    # Safely try to add the column if the table already exists from an older version
+    try:
+        c.execute("ALTER TABLE submissions ADD COLUMN hackathon_name TEXT DEFAULT 'Default Hackathon'")
+    except sqlite3.OperationalError:
+        pass # Column already exists, which is fine!
+        
     conn.commit()
     conn.close()
-    print("💽 SQLite Database Initialized!")
+    print("💽 SQLite Database Initialized (Multi-Hackathon Support Active)!")
 
 # Run on startup
 init_db()
@@ -713,9 +750,9 @@ def row_to_dict(row):
 @app.get("/api/moderate-teams")
 async def get_moderate_queue():
     conn = get_db_connection()
-    # This now shows EVERYTHING in the 'pending' status, 
-    # regardless of whether the AI put them in MODERATE or AUTO_ACCEPT.
-    teams = conn.execute("SELECT * FROM submissions WHERE status = 'pending'").fetchall()
+    active_hack = global_state["active_hackathon"]
+    # Only fetch pending teams for the ACTIVE hackathon
+    teams = conn.execute("SELECT * FROM submissions WHERE status = 'pending' AND hackathon_name = ?", (active_hack,)).fetchall()
     conn.close()
     return {"status": "success", "queue": [row_to_dict(t) for t in teams]}
 
@@ -754,7 +791,10 @@ async def submit_score(data: JudgeScore):
 @app.get("/api/admin/dashboard")
 async def admin_dashboard():
     conn = get_db_connection()
-    all_teams = conn.execute("SELECT * FROM submissions").fetchall()
+    active_hack = global_state["active_hackathon"]
+    
+    # Only calculate stats for the ACTIVE hackathon
+    all_teams = conn.execute("SELECT * FROM submissions WHERE hackathon_name = ?", (active_hack,)).fetchall()
     conn.close()
     
     total_submissions = len(all_teams)
@@ -781,14 +821,17 @@ async def admin_dashboard():
 @app.get("/api/admin/teams")
 async def get_all_teams():
     conn = get_db_connection()
-    teams = conn.execute("SELECT * FROM submissions").fetchall()
+    active_hack = global_state["active_hackathon"]
+    # Only fetch teams for the ACTIVE hackathon
+    teams = conn.execute("SELECT * FROM submissions WHERE hackathon_name = ?", (active_hack,)).fetchall()
     conn.close()
     return {"status": "success", "teams": [row_to_dict(t) for t in teams]}
 
 @app.get("/api/sponsor/winners")
 async def get_sponsor_view():
     conn = get_db_connection()
-    teams = conn.execute("SELECT * FROM submissions WHERE phase2_total IS NOT NULL ORDER BY phase2_total DESC").fetchall()
+    active_hack = global_state["active_hackathon"]
+    teams = conn.execute("SELECT * FROM submissions WHERE phase2_total IS NOT NULL AND hackathon_name = ? ORDER BY phase2_total DESC", (active_hack,)).fetchall()
     conn.close()
     
     winning_teams = []
@@ -804,4 +847,4 @@ async def get_sponsor_view():
 
     return {"status": "success", "winners": winning_teams}
 
-app.mount("/", StaticFiles(directory="frontend_mvp", html=True), name="static")
+app.mount("/frontend_mvp", StaticFiles(directory="frontend_mvp", html=True), name="frontend")

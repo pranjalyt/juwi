@@ -197,14 +197,684 @@
       text-align: center;
     }
   </style>
+
+  <!-- ═══════════════════════════════════════════════════════
+       JUWI — PREMIUM RESULTS UI  (Phase 1 & Phase 2)
+       Scoped styles injected here so shared styles.css is
+       not touched.  All class names are prefixed jw- to
+       avoid collisions with the existing design system.
+  ══════════════════════════════════════════════════════════ -->
+  <style id="jw-results-styles">
+
+    /* ── Google font for the results pages ────────────────── */
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+    /* ─────────────────────────────────────────────────────────
+       PHASE 1  —  Accepted Teams List
+    ───────────────────────────────────────────────────────── */
+
+    .jw-p1-wrap {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    /* Hero announcement banner */
+    .jw-p1-hero {
+      text-align: center;
+      padding: 60px 32px 48px;
+      margin-bottom: 36px;
+      position: relative;
+      overflow: hidden;
+    }
+    .jw-p1-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%,
+        rgba(193,123,92,0.10) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .jw-p1-emoji {
+      font-size: 3.5rem;
+      display: block;
+      margin-bottom: 20px;
+      animation: jw-floatIn 0.7s cubic-bezier(.34,1.56,.64,1) forwards;
+    }
+    .jw-p1-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+    .jw-p1-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-2);
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+    .jw-p1-subtitle strong { color: var(--accent); font-weight: 700; }
+
+    /* Section label */
+    .jw-p1-section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 14px;
+      padding-left: 4px;
+    }
+
+    /* Individual team row */
+    .jw-team-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 24px;
+      margin-bottom: 10px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.22s ease;
+      animation: jw-slideUp 0.4s ease both;
+    }
+    .jw-team-row:hover {
+      background: var(--surface);
+      border-color: var(--accent);
+      transform: translateX(4px);
+      box-shadow: var(--shadow);
+    }
+    .jw-team-row-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      overflow: hidden;
+    }
+    .jw-team-index {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(193,123,92,0.08);
+      border: 1px solid rgba(193,123,92,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--accent);
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .jw-team-info { overflow: hidden; }
+    .jw-team-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .jw-team-college {
+      font-size: 0.78rem;
+      color: var(--text-3);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .jw-selected-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 99px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(95,173,138,0.12);
+      color: var(--success);
+      border: 1px solid rgba(95,173,138,0.2);
+      flex-shrink: 0;
+    }
+    .jw-selected-pill::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      display: inline-block;
+    }
+
+    /* Empty state */
+    .jw-p1-empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-3);
+      font-size: 0.95rem;
+    }
+
+    /* ─────────────────────────────────────────────────────────
+       PHASE 2  —  Staggered 3-D Podium
+    ───────────────────────────────────────────────────────── */
+
+    .jw-p2-wrap {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .jw-p2-header {
+      text-align: center;
+      padding: 56px 20px 16px;
+      position: relative;
+    }
+    .jw-p2-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 50% 0%,
+        rgba(212,168,83,0.10) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .jw-p2-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2.2rem, 5vw, 3.6rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-3) 60%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+    .jw-p2-subtitle {
+      font-size: 1rem;
+      color: var(--text-2);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* ── Podium Stage ────────────────────────────────────────── */
+    .jw-podium-stage {
+      display: flex;
+      align-items: flex-end;           /* the 3D stagger key */
+      justify-content: center;
+      gap: 20px;
+      padding: 48px 16px 32px;
+      position: relative;
+    }
+    /* subtle floor line */
+    .jw-podium-stage::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg,
+        transparent, var(--border), transparent);
+    }
+
+    /* Each podium column (slot) */
+    .jw-podium-slot {
+      flex: 1;
+      max-width: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* The card */
+    .jw-podium-card {
+      width: 100%;
+      border-radius: 20px;
+      padding: 28px 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      animation: jw-podiumDrop 0.6s cubic-bezier(.34,1.56,.64,1) both;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .jw-podium-card:hover {
+      transform: translateY(-6px) scale(1.01);
+    }
+
+    /* Rank-specific styles */
+    .jw-podium-card.rank-1 {
+      background: linear-gradient(145deg, var(--accent) 0%, var(--accent-3) 100%);
+      border: none;
+      box-shadow: var(--shadow-lg);
+    }
+    .jw-podium-card.rank-1::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.08);
+      pointer-events: none;
+    }
+    .jw-podium-card.rank-2 {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .jw-podium-card.rank-2::before { display: none; }
+    .jw-podium-card.rank-3 {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .jw-podium-card.rank-3::before { display: none; }
+
+    /* Medal emoji */
+    .jw-podium-medal {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Rank label (1st / 2nd / 3rd) */
+    .jw-podium-rank-label {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+    .rank-1 .jw-podium-rank-label { color: rgba(255,255,255,0.85); }
+    .rank-2 .jw-podium-rank-label { color: var(--accent-4); }
+    .rank-3 .jw-podium-rank-label { color: var(--accent-2); }
+
+    /* Team name */
+    .jw-podium-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+      position: relative;
+      z-index: 1;
+      color: var(--text);
+    }
+    .rank-1 .jw-podium-name { font-size: 1.45rem; color: #fff; }
+
+    /* Score */
+    .jw-podium-score {
+      position: relative;
+      z-index: 1;
+      margin-top: 14px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .rank-1 .jw-podium-score {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .rank-2 .jw-podium-score {
+      background: rgba(92,123,193,0.08);
+      border: 1px solid rgba(92,123,193,0.18);
+    }
+    .rank-3 .jw-podium-score {
+      background: rgba(123,158,135,0.08);
+      border: 1px solid rgba(123,158,135,0.18);
+    }
+    .jw-podium-score-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+    .rank-1 .jw-podium-score-num { color: #fff; }
+    .rank-2 .jw-podium-score-num { color: var(--accent-4); }
+    .rank-3 .jw-podium-score-num { color: var(--accent-2); }
+    .jw-podium-score-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.6;
+      margin-top: 2px;
+    }
+
+    /* Banner text for 1st */
+    .jw-podium-banner {
+      font-size: 0.78rem;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.8);
+      margin-top: 14px;
+      position: relative;
+      z-index: 1;
+      padding: 0 4px;
+    }
+
+    /* Podium pedestal block below the card */
+    .jw-podium-base {
+      width: calc(100% - 16px);
+      border-radius: 0 0 8px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--border);
+    }
+    .jw-podium-base.h-1 { height: 80px; background: linear-gradient(180deg, rgba(193,123,92,0.15), rgba(193,123,92,0.04)); border: 1px solid rgba(193,123,92,0.15); border-top: none; }
+    .jw-podium-base.h-2 { height: 52px; background: linear-gradient(180deg, rgba(92,123,193,0.10), rgba(92,123,193,0.02)); border: 1px solid rgba(92,123,193,0.12); border-top: none; }
+    .jw-podium-base.h-3 { height: 32px; background: linear-gradient(180deg, rgba(123,158,135,0.10), rgba(123,158,135,0.02)); border: 1px solid rgba(123,158,135,0.12); border-top: none; }
+
+    /* animation delays for the three cards */
+    .jw-podium-slot:nth-child(1) .jw-podium-card { animation-delay: 0.15s; }
+    .jw-podium-slot:nth-child(2) .jw-podium-card { animation-delay: 0.0s;  }
+    .jw-podium-slot:nth-child(3) .jw-podium-card { animation-delay: 0.3s;  }
+
+    /* ── Feedback / Remarks section ─────────────────────────── */
+    .jw-feedback-section {
+      max-width: 780px;
+      margin: 48px auto 0;
+    }
+    .jw-feedback-reveal-btn {
+      display: flex;
+      width: 100%;
+      max-width: 380px;
+      margin: 0 auto 32px;
+      padding: 14px 32px;
+      border-radius: 14px;
+      border: 1.5px solid var(--border);
+      background: var(--text);
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: var(--shadow-sm);
+    }
+    .jw-feedback-reveal-btn:hover {
+      background: #333;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    /* Remarks card */
+    .jw-remarks-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px 32px;
+      box-shadow: var(--shadow);
+    }
+    .jw-remarks-heading {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text);
+      text-align: center;
+      margin-bottom: 28px;
+      letter-spacing: -0.02em;
+    }
+
+    /* Custom select */
+    .jw-select-wrap {
+      position: relative;
+      max-width: 420px;
+      margin: 0 auto 32px;
+    }
+    .jw-select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-3);
+      pointer-events: none;
+      font-size: 0.9rem;
+    }
+    .jw-feedback-select {
+      width: 100%;
+      padding: 12px 42px 12px 16px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.925rem;
+      font-weight: 500;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .jw-feedback-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(193,123,92,0.12);
+      background: var(--surface);
+    }
+
+    /* Separator */
+    .jw-separator {
+      height: 1px;
+      background: var(--border);
+      margin: 0 -32px 28px;
+    }
+
+    /* feedbackContainer inner styles */
+    .jw-fc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .jw-fc-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .jw-fc-score-display { text-align: right; }
+    .jw-fc-score-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+    .jw-fc-score-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-3);
+      margin-top: 3px;
+    }
+    .jw-fc-badge-finalist {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(95,173,138,0.12);
+      color: var(--success);
+      border: 1px solid rgba(95,173,138,0.2);
+    }
+    .jw-fc-badge-participant {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: var(--surface-2);
+      color: var(--text-2);
+      border: 1px solid var(--border);
+    }
+
+    /* Judges remarks block */
+    .jw-remarks-block {
+      padding: 20px;
+      border-radius: 12px;
+      background: var(--surface-2);
+      border-left: 3px solid var(--accent);
+      margin-bottom: 24px;
+    }
+    .jw-remarks-block-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .jw-remarks-block-text {
+      font-size: 1rem;
+      font-style: italic;
+      line-height: 1.75;
+      color: var(--text-2);
+    }
+
+    /* AI Deep dive panel */
+    .jw-ai-panel {
+      padding: 24px;
+      border-radius: 14px;
+      background: var(--surface-2);
+      border: 1px dashed var(--border);
+    }
+    .jw-ai-panel-loading {
+      text-align: center;
+      padding: 36px 20px;
+    }
+    .jw-ai-panel-loading-icon {
+      font-size: 2.5rem;
+      color: var(--accent);
+      animation: jw-pulse 1.5s ease infinite;
+      display: block;
+      margin-bottom: 14px;
+    }
+    .jw-ai-panel-loading h3 {
+      font-family: 'Outfit', sans-serif;
+      color: var(--text);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .jw-ai-panel-loading p {
+      color: var(--text-3);
+      font-size: 0.85rem;
+    }
+    .jw-ai-panel-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Reset button */
+    .jw-reset-wrap {
+      text-align: center;
+      margin-top: 48px;
+      padding-bottom: 40px;
+    }
+    .jw-reset-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: var(--radius);
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text-2);
+      font-family: var(--font);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .jw-reset-btn:hover {
+      border-color: var(--text);
+      color: var(--text);
+      background: var(--surface-2);
+    }
+
+    /* ── Keyframes ───────────────────────────────────────────── */
+    @keyframes jw-floatIn {
+      0%   { opacity: 0; transform: translateY(20px) scale(0.8); }
+      70%  { transform: translateY(-6px) scale(1.1); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes jw-slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes jw-podiumDrop {
+      0%   { opacity: 0; transform: translateY(-40px) scale(0.92); }
+      70%  { transform: translateY(6px) scale(1.02); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes jw-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.45; transform: scale(1.12); }
+    }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 700px) {
+      .jw-podium-stage {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 24px 12px;
+        gap: 16px;
+      }
+      .jw-podium-slot {
+        max-width: 100%;
+      }
+      .jw-podium-base { display: none; }
+      .jw-remarks-card { padding: 24px 18px; }
+      .jw-separator { margin: 0 -18px 28px; }
+    }
+
+  </style>
 </head>
 
 <body>
 
   <nav class="nav">
     <a href="index.html" class="nav-brand" style="text-decoration:none;">
-      <div class="dot-logo">J</div>
-      Juwi<span>.</span>
+      <span style="font-size:1.25rem;font-weight:800;color:#1c1c1e;">Juwi</span><span style="color:var(--accent);font-weight:300;font-size:0.68rem;margin-left:7px;letter-spacing:0.04em;text-transform:uppercase;">by DOT</span>
     </a>
     <div class="nav-links">
       <span id="statusBadge" class="badge badge-neutral">Submission Open</span>
