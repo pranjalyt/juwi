@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +8,18 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <style>
-    .judge-layout { display: grid; grid-template-columns: 1fr 380px; gap: 24px; align-items: flex-start; }
-    @media(max-width:960px){ .judge-layout{ grid-template-columns: 1fr; } }
+    .judge-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 24px;
+      align-items: flex-start;
+    }
+
+    @media(max-width:960px) {
+      .judge-layout {
+        grid-template-columns: 1fr;
+      }
+    }
 
     /* Phase 1 */
     .rapid-card {
@@ -18,30 +29,87 @@
       padding: 32px;
       border-left: 4px solid var(--accent-3);
     }
+
     .rapid-queue-counter {
-      font-size: .75rem; font-weight: 700; color: var(--text-3);
-      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px;
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
     }
-    .rapid-actions { display: flex; gap: 12px; margin-top: 24px; }
-    .bullet-list { list-style: none; margin: 16px 0; display: grid; gap: 10px; }
+
+    .rapid-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .bullet-list {
+      list-style: none;
+      margin: 16px 0;
+      display: grid;
+      gap: 10px;
+    }
+
     .bullet-list li {
-      display: flex; align-items: flex-start; gap: 10px;
-      font-size: .9rem; color: var(--text-2); line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: .9rem;
+      color: var(--text-2);
+      line-height: 1.5;
     }
-    .bullet-list li::before { content: '▸'; color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+
+    .bullet-list li::before {
+      content: '▸';
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
 
     /* Phase 2 */
-    .context-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px; }
-    @media(max-width:768px){ .context-grid{ grid-template-columns: 1fr; } }
+    .context-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media(max-width:768px) {
+      .context-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .context-pane {
-      background: var(--surface-2); border-radius: var(--radius-sm);
-      padding: 20px; text-align: center; min-height: 160px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+      text-align: center;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
       border: 1.5px dashed var(--border);
     }
-    .context-pane .pane-icon { font-size: 2.5rem; }
-    .context-pane p { font-size: .8rem; color: var(--text-3); }
-    .context-pane a { font-size: .85rem; font-weight: 600; color: var(--accent); }
+
+    .context-pane .pane-icon {
+      font-size: 2.5rem;
+    }
+
+    .context-pane p {
+      font-size: .8rem;
+      color: var(--text-3);
+    }
+
+    .context-pane a {
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
 
     /* Live audio panel */
     .audio-panel {
@@ -50,198 +118,308 @@
       overflow: hidden;
       box-shadow: var(--shadow);
     }
+
     .audio-header {
-      background: var(--text); color: white;
+      background: var(--text);
+      color: white;
       padding: 16px 20px;
-      display: flex; align-items: center; gap: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-    .audio-header h4 { color: white; margin: 0; }
+
+    .audio-header h4 {
+      color: white;
+      margin: 0;
+    }
+
     .rec-dot {
-      width: 10px; height: 10px; border-radius: 50%;
-      background: var(--danger); flex-shrink: 0;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--danger);
+      flex-shrink: 0;
     }
-    .rec-dot.inactive { background: #555; animation: none; }
-    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
-    .rec-dot.active { animation: blink 1s infinite; }
-    .audio-body { padding: 20px; background: var(--surface); }
 
-    .bs-meter-label { display: flex; justify-content: space-between; margin-bottom: 6px; }
-    .bs-meter-label span { font-size: .75rem; font-weight: 600; }
+    .rec-dot.inactive {
+      background: #555;
+      animation: none;
+    }
 
-    .attack-feed { max-height: 200px; overflow-y: auto; display: grid; gap: 8px; }
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: .3;
+      }
+    }
+
+    .rec-dot.active {
+      animation: blink 1s infinite;
+    }
+
+    .audio-body {
+      padding: 20px;
+      background: var(--surface);
+    }
+
+    .bs-meter-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .bs-meter-label span {
+      font-size: .75rem;
+      font-weight: 600;
+    }
+
+    .attack-feed {
+      max-height: 200px;
+      overflow-y: auto;
+      display: grid;
+      gap: 8px;
+    }
+
     .attack-item {
-      background: rgba(193,123,92,.08);
-      border: 1px solid rgba(193,123,92,.2);
+      background: rgba(193, 123, 92, .08);
+      border: 1px solid rgba(193, 123, 92, .2);
       border-radius: var(--radius-sm);
       padding: 12px 14px;
-      font-size: .85rem; line-height: 1.5;
+      font-size: .85rem;
+      line-height: 1.5;
     }
-    .attack-item strong { color: var(--accent); display: block; margin-bottom: 4px; font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; }
+
+    .attack-item strong {
+      color: var(--accent);
+      display: block;
+      margin-bottom: 4px;
+      font-size: .75rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
 
     /* Scoring sidebar */
-    .scoring-sidebar { display: grid; gap: 16px; }
-    .rubric-score-block {
-      background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 20px;
+    .scoring-sidebar {
+      display: grid;
+      gap: 16px;
     }
-    .rubric-score-block h4 { font-size: .85rem; margin-bottom: 14px; }
+
+    .rubric-score-block {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 20px;
+    }
+
+    .rubric-score-block h4 {
+      font-size: .85rem;
+      margin-bottom: 14px;
+    }
+
     .score-tally {
-      padding: 20px; border-radius: var(--radius);
+      padding: 20px;
+      border-radius: var(--radius);
       background: linear-gradient(135deg, var(--text), #333);
-      color: white; text-align: center;
+      color: white;
+      text-align: center;
       box-shadow: var(--shadow);
     }
-    .score-tally .big-score { font-size: 3.5rem; font-weight: 800; letter-spacing: -.04em; }
-    .score-tally .score-max { font-size: 1rem; color: rgba(255,255,255,.4); }
+
+    .score-tally .big-score {
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: -.04em;
+    }
+
+    .score-tally .score-max {
+      font-size: 1rem;
+      color: rgba(255, 255, 255, .4);
+    }
+
     .pro-con-box {
-      background: var(--surface-2); border-radius: var(--radius-sm);
-      padding: 14px; font-size: .85rem; line-height: 1.6; color: var(--text-2);
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      font-size: .85rem;
+      line-height: 1.6;
+      color: var(--text-2);
       min-height: 80px;
     }
   </style>
 </head>
+
 <body>
 
-<nav class="nav">
-  <a href="index.html" class="nav-brand" style="text-decoration:none;">
-    <span style="font-size:1.25rem;font-weight:800;color:#1c1c1e;">Juwi</span><span style="color:var(--accent);font-weight:300;font-size:0.68rem;margin-left:7px;letter-spacing:0.04em;text-transform:uppercase;">by DOT</span>
-  </a>
-  <div class="nav-links">
-    <span id="phaseTagJudge" class="phase-indicator phase-1">Phase 1: Mass Triage</span>
-    <a href="admin.html" class="btn btn-ghost btn-sm">← Admin</a>
-  </div>
-</nav>
-
-<div class="page-wrap">
-
-  <!-- PHASE 1 VIEW -->
-  <div id="phase1View">
-    <div class="section-header mb-24">
-      <h2><i class="ti ti-bolt" style="color:var(--accent-3);"></i> Rapid Review Queue</h2>
-      <p>AI has flagged these as <strong>Moderate</strong> — your call to make. Review the AI summary and decide.</p>
+  <nav class="nav">
+    <a href="index.html" class="nav-brand" style="text-decoration:none;">
+      <span style="font-size:1.25rem;font-weight:800;color:#1c1c1e;">Juwi</span><span
+        style="color:var(--accent);font-weight:300;font-size:0.68rem;margin-left:7px;letter-spacing:0.04em;text-transform:uppercase;">by
+        DOT</span>
+    </a>
+    <div class="nav-links">
+      <span id="phaseTagJudge" class="phase-indicator phase-1">Phase 1: Mass Triage</span>
+      <a href="admin.html" class="btn btn-ghost btn-sm">← Admin</a>
     </div>
-    <div class="rapid-queue-counter" id="queueCounter">Team 1 of 3</div>
-    <div class="rapid-card" id="rapidCard">
-      <!-- filled by JS -->
-    </div>
-    <div style="margin-top:16px;display:flex;gap:8px;align-items:center;">
-      <div class="progress-bar-wrap" style="flex:1;height:6px;">
-        <div class="progress-bar-fill" id="queueProgress" style="width:33%;"></div>
+  </nav>
+
+  <div class="page-wrap">
+
+    <!-- PHASE 1 VIEW -->
+    <div id="phase1View">
+      <div class="section-header mb-24">
+        <h2><i class="ti ti-bolt" style="color:var(--accent-3);"></i> Rapid Review Queue</h2>
+        <p>AI has flagged these as <strong>Moderate</strong> — your call to make. Review the AI summary and decide.</p>
       </div>
-      <span id="queueFraction" style="font-size:.8rem;color:var(--text-3);white-space:nowrap;">1 / 3</span>
-    </div>
-  </div>
-
-  <!-- PHASE 2 VIEW -->
-  <div id="phase2View" style="display:none;">
-    <div class="section-header mb-24">
-      <h2><i class="ti ti-scale" style="color:var(--accent);"></i> God Mode Arena</h2>
-      <p>Live judging panel with AI augmentation, B.S. detection, and attack questions.</p>
-    </div>
-
-    <!-- Team selector -->
-    <div class="card mb-24">
-      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:200px;">
-          <label class="form-label">Active Team</label>
-          <select id="teamSelect" class="form-control" onchange="loadTeamContext()">
-            <option value="">Select a team to judge…</option>
-          </select>
+      <div class="rapid-queue-counter" id="queueCounter">Team 1 of 3</div>
+      <div class="rapid-card" id="rapidCard">
+        <!-- filled by JS -->
+      </div>
+      <div style="margin-top:16px;display:flex;gap:8px;align-items:center;">
+        <div class="progress-bar-wrap" style="flex:1;height:6px;">
+          <div class="progress-bar-fill" id="queueProgress" style="width:33%;"></div>
         </div>
-        <button class="btn btn-accent" onclick="loadTeamContext()">Load Context →</button>
+        <span id="queueFraction" style="font-size:.8rem;color:var(--text-3);white-space:nowrap;">1 / 3</span>
       </div>
     </div>
 
-    <div class="judge-layout" id="judgeLayout" style="display:none;">
-      <!-- LEFT: context + AI -->
-      <div>
-        <!-- Context panes -->
-        <div class="card mb-24">
-          <h3 class="mb-16"><i class="ti ti-folder"></i> Submission Context</h3>
-          <div class="context-grid">
-            <div class="context-pane">
-              <div class="pane-icon"><i class="ti ti-presentation"></i></div>
-              <p>PPT / Presentation</p>
-              <a href="#" onclick="return false">View Slides →</a>
-            </div>
-            <div class="context-pane">
-              <div class="pane-icon"><i class="ti ti-file-text"></i></div>
-              <p>Project Abstract</p>
-              <a href="#" onclick="return false">Read Abstract →</a>
-            </div>
-            <div class="context-pane" id="githubPane">
-              <div class="pane-icon"><i class="ti ti-brand-github"></i></div>
-              <p>GitHub Repository</p>
-              <a id="githubLink" href="#" target="_blank">View Code →</a>
-            </div>
-          </div>
-          <div id="abstractPreview" style="background:var(--surface-2);border-radius:var(--radius-sm);padding:16px;font-size:.875rem;line-height:1.8;color:var(--text-2);display:none;"></div>
-        </div>
+    <!-- PHASE 2 VIEW -->
+    <div id="phase2View" style="display:none;">
+      <div class="section-header mb-24">
+        <h2><i class="ti ti-scale" style="color:var(--accent);"></i> God Mode Arena</h2>
+        <p>Live judging panel with AI augmentation, B.S. detection, and attack questions.</p>
+      </div>
 
-        <!-- Audio + AI -->
-        <div class="audio-panel mb-24">
-          <div class="audio-header">
-            <div class="rec-dot inactive" id="recDot"></div>
-            <h4>Live Audio &amp; AI Brain</h4>
-            <div style="margin-left:auto;display:flex;gap:8px;">
-              <button id="audioToggle" class="btn btn-accent btn-sm pulse-btn" onclick="toggleAudio()"><i class="ti ti-microphone"></i> Enable Live Audio</button>
-            </div>
+      <!-- Team selector -->
+      <div class="card mb-24">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <label class="form-label">Active Team</label>
+            <select id="teamSelect" class="form-control" onchange="loadTeamContext()">
+              <option value="">Select a team to judge…</option>
+            </select>
           </div>
-          <div class="audio-body">
-            <div class="mb-16">
-              <div class="bs-meter-label">
-                <span><i class="ti ti-microscope"></i> B.S. Detector — Claim vs. Codebase</span>
-                <span id="bsScore" style="color:var(--accent);font-weight:700;">--</span>
+          <button class="btn btn-accent" onclick="loadTeamContext()">Load Context →</button>
+        </div>
+      </div>
+
+      <div class="judge-layout" id="judgeLayout" style="display:none;">
+        <!-- LEFT: context + AI -->
+        <div>
+          <!-- Context panes -->
+          <div class="card mb-24">
+            <h3 class="mb-16"><i class="ti ti-folder"></i> Submission Context</h3>
+            <div class="context-grid">
+              <div class="context-pane">
+                <div class="pane-icon"><i class="ti ti-presentation"></i></div>
+                <p>PPT / Presentation</p>
+                <a href="#" onclick="return false">View Slides →</a>
               </div>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar-fill" id="bsBar" style="width:0%;background:linear-gradient(90deg,var(--success),var(--accent-3));"></div>
+              <div class="context-pane">
+                <div class="pane-icon"><i class="ti ti-file-text"></i></div>
+                <p>Project Abstract</p>
+                <a href="#" onclick="return false">Read Abstract →</a>
               </div>
-              <p style="font-size:.75rem;color:var(--text-3);margin-top:6px;" id="bsDetail">Enable audio to activate real-time claim verification.</p>
+              <div class="context-pane" id="githubPane">
+                <div class="pane-icon"><i class="ti ti-brand-github"></i></div>
+                <p>GitHub Repository</p>
+                <a id="githubLink" href="#" target="_blank">View Code →</a>
+              </div>
             </div>
-            <div class="divider"></div>
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-              <strong style="font-size:.85rem;"><i class="ti ti-bolt" style="color:var(--accent);"></i> Dynamic Attack Questions</strong>
-              <button class="btn btn-outline btn-sm" onclick="generateAttacks()">Refresh</button>
+            <div id="abstractPreview"
+              style="background:var(--surface-2);border-radius:var(--radius-sm);padding:16px;font-size:.875rem;line-height:1.8;color:var(--text-2);display:none;">
             </div>
-            <div class="attack-feed" id="attackFeed">
-              <div style="text-align:center;padding:20px;color:var(--text-3);font-size:.85rem;">Enable audio to generate attack questions.</div>
+          </div>
+
+          <!-- Audio + AI -->
+          <div class="audio-panel mb-24">
+            <div class="audio-header">
+              <div class="rec-dot inactive" id="recDot"></div>
+              <h4>Live Audio &amp; AI Brain</h4>
+              <div style="margin-left:auto;display:flex;gap:8px;">
+                <button id="audioToggle" class="btn btn-accent btn-sm pulse-btn" onclick="toggleAudio()"><i
+                    class="ti ti-microphone"></i> Enable Live Audio</button>
+              </div>
+            </div>
+            <div class="audio-body">
+              <div class="mb-16">
+                <div class="bs-meter-label">
+                  <span><i class="ti ti-microscope"></i> B.S. Detector — Claim vs. Codebase</span>
+                  <span id="bsScore" style="color:var(--accent);font-weight:700;">--</span>
+                </div>
+                <div class="progress-bar-wrap">
+                  <div class="progress-bar-fill" id="bsBar"
+                    style="width:0%;background:linear-gradient(90deg,var(--success),var(--accent-3));"></div>
+                </div>
+                <p style="font-size:.75rem;color:var(--text-3);margin-top:6px;" id="bsDetail">Enable audio to activate
+                  real-time claim verification.</p>
+              </div>
+              <div class="divider"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <strong style="font-size:.85rem;"><i class="ti ti-bolt" style="color:var(--accent);"></i> Dynamic Attack
+                  Questions</strong>
+                <button class="btn btn-outline btn-sm" onclick="generateAttacks()">Refresh</button>
+              </div>
+              <div class="attack-feed" id="attackFeed">
+                <div style="text-align:center;padding:20px;color:var(--text-3);font-size:.85rem;">Enable audio to
+                  generate attack questions.</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- RIGHT: Scoring -->
-      <div class="scoring-sidebar">
-        <div class="score-tally">
-          <div style="font-size:.75rem;opacity:.5;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;">Total Score</div>
-          <div class="big-score" id="totalScore">0</div>
-          <div class="score-max" id="scoreMax">/ 50</div>
+        <!-- RIGHT: Scoring -->
+        <div class="scoring-sidebar">
+          <div class="score-tally">
+            <div style="font-size:.75rem;opacity:.5;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;">
+              Total Score</div>
+            <div class="big-score" id="totalScore">0</div>
+            <div class="score-max" id="scoreMax">/ 50</div>
+          </div>
+
+          <div class="rubric-score-block">
+            <h4 style="margin-bottom:12px;"><i class="ti ti-clock"></i> Presentation Time</h4>
+            <div style="display:flex; gap:12px; align-items:center;">
+              <input type="number" id="presentationTime" class="form-control" placeholder="e.g. 5" style="width: 80px;"
+                oninput="recalcTotal()">
+              <span style="font-size: .85rem; color: var(--text-3);">minutes (Limit: 5m)</span>
+            </div>
+            <div id="penaltyWarning"
+              style="color: var(--danger); font-size: .8rem; font-weight: 600; margin-top: 8px; display: none;"></div>
+          </div>
+
+          <div class="rubric-score-block" id="rubricSliders">
+          </div>
+
+          <div class="rubric-score-block">
+            <h4><i class="ti ti-notes"></i> Remarks</h4>
+            <textarea id="remarksBox" class="form-control" rows="4"
+              placeholder="Your observations about this team…"></textarea>
+            <button class="btn btn-outline btn-sm" style="margin-top:12px;width:100%;" onclick="generateProsCons()"><i
+                class="ti ti-sparkles"></i> Auto-Generate Pros &amp; Cons</button>
+          </div>
+
+          <div class="rubric-score-block">
+            <h4 class="mb-8"><i class="ti ti-circle-check" style="color:var(--success);"></i> Pros</h4>
+            <div class="pro-con-box" id="prosBox">-</div>
+            <h4 class="mb-8" style="margin-top:14px;"><i class="ti ti-circle-x" style="color:var(--danger);"></i> Cons
+            </h4>
+            <div class="pro-con-box" id="consBox">-</div>
+          </div>
+
+          <button class="btn btn-primary" style="width:100%;" onclick="submitScore()">Submit Score & Remarks →</button>
         </div>
-
-        <div class="rubric-score-block" id="rubricSliders">
-          <!-- Filled by JS -->
-        </div>
-
-        <div class="rubric-score-block">
-          <h4><i class="ti ti-notes"></i> Remarks</h4>
-          <textarea id="remarksBox" class="form-control" rows="4" placeholder="Your observations about this team…"></textarea>
-          <button class="btn btn-outline btn-sm" style="margin-top:12px;width:100%;" onclick="generateProsCons()"><i class="ti ti-sparkles"></i> Auto-Generate Pros &amp; Cons</button>
-        </div>
-
-        <div class="rubric-score-block">
-          <h4 class="mb-8"><i class="ti ti-circle-check" style="color:var(--success);"></i> Pros</h4>
-          <div class="pro-con-box" id="prosBox">-</div>
-          <h4 class="mb-8" style="margin-top:14px;"><i class="ti ti-circle-x" style="color:var(--danger);"></i> Cons</h4>
-          <div class="pro-con-box" id="consBox">-</div>
-        </div>
-
-        <button class="btn btn-primary" style="width:100%;" onclick="submitScore()">Submit Score & Remarks →</button>
       </div>
     </div>
+
   </div>
 
-</div>
-
-<div id="toast-container"></div>
-<script src="judge.js"></script>
+  <div id="toast-container"></div>
+  <script src="judge.js"></script>
 </body>
+
 </html>

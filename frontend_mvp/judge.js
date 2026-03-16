@@ -237,6 +237,12 @@ function buildRubricSliders() {
   scores = {};
   list.forEach(r => scores[r.id] = { val: 0, max: r.weight });
   recalcTotal();
+  // Reset the timer input for the new team
+  const timeInput = document.getElementById('presentationTime');
+  if (timeInput) {
+    timeInput.value = '';
+    document.getElementById('penaltyWarning').style.display = 'none';
+  }
 }
 
 function updateScore(id, max, val) {
@@ -246,8 +252,48 @@ function updateScore(id, max, val) {
 }
 
 function recalcTotal() {
-  const total = Object.values(scores).reduce((a, b) => a + b.val, 0);
-  document.getElementById('totalScore').textContent = total;
+  // 1. Calculate Base Score from the sliders
+  let baseTotal = Object.values(scores).reduce((a, b) => a + b.val, 0);
+
+  // 2. Time Penalty Logic
+  const timeInput = document.getElementById('presentationTime');
+  const timeVal = timeInput && timeInput.value ? parseFloat(timeInput.value) : 0;
+  const LIMIT = 5;
+  let penalty = 0;
+
+  const warningEl = document.getElementById('penaltyWarning');
+
+  if (timeVal > LIMIT) {
+    // Calculate how many extra minutes they took (capping the penalty at 5 extra minutes)
+    const extraMinutes = Math.min(Math.ceil(timeVal - LIMIT), 5);
+
+    // 10% penalty per extra minute (e.g., 2 extra mins = 0.20 multiplier)
+    const penaltyMultiplier = extraMinutes * 0.10;
+
+    // Apply penalty to the base score
+    penalty = Math.floor(baseTotal * penaltyMultiplier);
+
+    if (warningEl) {
+      warningEl.style.display = 'block';
+      warningEl.textContent = `⚠️ Overtime: +${extraMinutes} min. Penalty: -${penalty} pts`;
+    }
+  } else {
+    // Within time limit, clear warnings
+    if (warningEl) warningEl.style.display = 'none';
+  }
+
+  // 3. Calculate Final Score
+  const finalTotal = Math.max(0, baseTotal - penalty); // Ensure score never drops below 0
+
+  // 4. Update the Big Number UI
+  const totalDisplay = document.getElementById('totalScore');
+  if (totalDisplay) {
+    totalDisplay.textContent = finalTotal;
+    // Make the text turn red if a penalty is applied
+    totalDisplay.style.color = penalty > 0 ? "var(--danger)" : "white";
+  }
+
+  return finalTotal; // Return this so the submit function can use it!
 }
 
 async function loadTeamContext() {
@@ -513,7 +559,8 @@ function generateProsCons() {
 async function submitScore() {
   if (!currentTeam) { toast('Load a team first.', 'danger'); return; }
 
-  const total = Object.values(scores).reduce((a, b) => a + b.val, 0);
+  // Use the new recalcTotal() function that includes the time penalty!
+  const finalTotal = recalcTotal();
   const remarks = document.getElementById('remarksBox').value;
 
   // Package up all the judge's hard work into a JSON payload
@@ -521,7 +568,7 @@ async function submitScore() {
     teamId: currentTeam.id,
     teamName: currentTeam.name,
     scores: scores,
-    total: total,
+    total: finalTotal, // <--- Saves the strictly penalized score!
     remarks: remarks,
     pros: document.getElementById('prosBox').textContent,
     cons: document.getElementById('consBox').textContent
