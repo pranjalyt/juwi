@@ -317,7 +317,10 @@
               <div class="context-pane">
                 <div class="pane-icon"><i class="ti ti-presentation"></i></div>
                 <p>PPT / Presentation</p>
-                <a href="#" onclick="return false">View Slides →</a>
+                <input type="file" id="slideUpload" accept="application/pdf" style="display:none;"
+                  onchange="analyzeSlides(event)">
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('slideUpload').click()">Upload &
+                  Analyze PDF</button>
               </div>
               <div class="context-pane">
                 <div class="pane-icon"><i class="ti ti-file-text"></i></div>
@@ -417,6 +420,28 @@
     </div>
 
   </div>
+
+  <!-- Slide Analysis Modal -->
+  <div id="slideModal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); z-index:9999; align-items:center; justify-content:center;">
+    <div
+      style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); width:90%; max-width:700px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.5);">
+
+      <div
+        style="padding:20px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); border-radius:var(--radius) var(--radius) 0 0;">
+        <h3 style="margin:0; display:flex; align-items:center; gap:8px;"><i class="ti ti-presentation"
+            style="color:var(--accent);"></i> AI Slide Analysis</h3>
+        <button onclick="document.getElementById('slideModal').style.display='none'"
+          style="background:none; border:none; color:var(--text-3); font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+
+      <div id="slideAnalysisResult"
+        style="padding:28px; overflow-y:auto; font-size:.95rem; line-height:1.7; color:var(--text-2);">
+      </div>
+
+    </div>
+  </div>
+
 
   <div id="toast-container"></div>
   <script src="judge.js"></script>

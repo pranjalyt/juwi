@@ -596,5 +596,79 @@ async function submitScore() {
   }
 }
 
+
+// ── PDF Slide Analysis & Markdown Parsing ────────────────────────
+
+async function analyzeSlides(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const modal = document.getElementById('slideModal');
+  const resultDiv = document.getElementById('slideAnalysisResult');
+
+  // Open modal in loading state
+  modal.style.display = 'flex';
+  resultDiv.innerHTML = `
+    <div style="text-align:center; padding: 40px;">
+      <i class="ti ti-loader" style="font-size: 2.5rem; color: var(--accent); animation: spin 1s linear infinite;"></i>
+      <h3 style="margin-top: 16px;">Juwi is reading the PDF...</h3>
+      <p style="color: var(--text-3); font-size: .85rem;">Extracting text and scanning for prompt injections.</p>
+    </div>
+  `;
+
+  // Inject spin animation if it doesn't exist
+  if (!document.getElementById('spin-style')) {
+    const style = document.createElement('style');
+    style.id = 'spin-style';
+    style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
+    document.head.appendChild(style);
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await fetch("http://127.0.0.1:8000/analyze-slides", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (data.status === "success") {
+      resultDiv.innerHTML = parseMarkdown(data.slide_analysis);
+      toast('Slide analysis complete!', 'success');
+    } else if (data.status === "error" && data.message.includes("SECURITY")) {
+      // Handle the Security Firewall rejection beautifully
+      resultDiv.innerHTML = `
+        <div style="background: rgba(220, 53, 69, 0.1); border-left: 4px solid var(--danger); padding: 20px; border-radius: var(--radius-sm);">
+          <h3 style="color: var(--danger); margin-bottom: 8px;"><i class="ti ti-shield-x"></i> Security Alert</h3>
+          <p>${data.message}</p>
+        </div>
+      `;
+      toast('Security threat detected.', 'danger');
+    } else {
+      resultDiv.innerHTML = `<p style="color: var(--text-3); text-align:center; margin-top: 20px;">${data.message}</p>`;
+    }
+  } catch (error) {
+    console.error("PDF Analysis Error:", error);
+    resultDiv.innerHTML = `<div style="color: var(--danger); text-align:center;">Failed to reach the AI backend. Check if Python is running.</div>`;
+  }
+
+  // Reset the file input so you can upload the same file again if needed
+  event.target.value = '';
+}
+
+// Lightweight Markdown Parser
+function parseMarkdown(md) {
+  let html = md;
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--text);">$1</strong>');
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  html = html.replace(/^\* (.*$)/gim, '<li style="margin-bottom: 6px;">$1</li>');
+  html = html.replace(/^\d+\.\s(.*$)/gim, '<li style="margin-bottom: 6px;">$1</li>');
+  html = html.replace(/\n/g, '<br>');
+  return `<div style="font-family: system-ui, sans-serif;">${html}</div>`;
+}
+
 // ── Init ──────────────────────────────────────────────────────
 initPhase();
