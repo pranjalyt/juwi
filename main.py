@@ -560,7 +560,12 @@ async def analyze_repo(github_url: str):
             "questions": [
                 {"tag": "Architecture", "q": "Your aggressive question here?"},
                 {"tag": "Security", "q": "Your aggressive question here?"}
-            ]
+            ],
+            "scores_out_of_100": {
+                "Innovation": 85,
+                "Technical Depth": 70,
+                "Code Quality": 60
+            }
         }"""
 
         response = client.chat.completions.create(

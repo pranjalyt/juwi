@@ -344,271 +344,312 @@ async function loadTeamContext() {
         </div>
       `).join('');
 
-      toast("✅ AI Repo Analysis Complete!", "success");
+      // --- 🤖 NEW: AUTO-MOVE THE SLIDERS! ---
+      if (data.scores_out_of_100) {
+        const sliderWraps = document.querySelectorAll('.slider-wrap');
+        sliderWraps.forEach(wrap => {
+          const nameEl = wrap.querySelector('.slider-header span:first-child');
+          const inputEl = wrap.querySelector('input[type="range"]');
+          if (!nameEl || !inputEl) return;
+
+          const name = nameEl.textContent.trim().toLowerCase();
+          let percentage = null;
+
+          // Map the AI's JSON output to the physical sliders on the screen
+          if (name.includes('innovation')) percentage = data.scores_out_of_100['Innovation'];
+          else if (name.includes('tech') || name.includes('depth')) percentage = data.scores_out_of_100['Technical Depth'];
+          else if (name.includes('code') || name.includes('quality')) percentage = data.scores_out_of_100['Code Quality'];
+
+          // If the AI scored this category, move the slider
+          if (percentage !== null && percentage !== undefined) {
+            const maxVal = parseInt(inputEl.max);
+            const id = inputEl.id.replace('sl-', '');
+
+            // Calculate the score based on the max slider value (e.g., 50% of 50 max points = 25)
+            const calculatedVal = Math.round((percentage / 100) * maxVal);
+
+            // Physically move the slider handle
+            inputEl.value = calculatedVal;
+
+            // Update the global math and the text span
+            updateScore(id, maxVal, calculatedVal);
+
+            // Add a subtle glowing animation so the Judge knows the AI did it
+            inputEl.style.transition = "box-shadow 0.3s ease";
+            inputEl.style.boxShadow = "0 0 12px var(--accent)";
+            setTimeout(() => inputEl.style.boxShadow = "none", 2500);
+          }
+        });
+        toast("🤖 AI auto-filled technical scores based on codebase!", "success");
+      } else {
+        toast("✅ AI Repo Analysis Complete!", "success");
+      }
+      // ----------------------------------------
 
     } catch (err) {
       console.error("Failed to fetch repo analysis", err);
       toast("Error reaching AI Backend", "danger");
     }
+
+    //   // FOR TESTING: Override ByteForce's GitHub with Autotantra so the AI can actually read code
+    //   if (currentTeam.name === "ByteForce") {
+    //     currentTeam.github = "https://github.com/pranjalyt/autotantra";
+    //   }
+
+    //   document.getElementById('judgeLayout').style.display = 'grid';
+    //   if (currentTeam.abstract) {
+    //     const ab = document.getElementById('abstractPreview');
+    //     ab.style.display = 'block';
+    //     ab.textContent = currentTeam.abstract;
+    //   }
+    //   if (currentTeam.github) {
+    //     document.getElementById('githubLink').href = currentTeam.github;
+    //   }
+    //   toast(`Context loaded: ${currentTeam.name}`);
+    // }
+
   }
 }
 
-//   // FOR TESTING: Override ByteForce's GitHub with Autotantra so the AI can actually read code
-//   if (currentTeam.name === "ByteForce") {
-//     currentTeam.github = "https://github.com/pranjalyt/autotantra";
-//   }
+    // ── REAL Juwi Audio & AI Integration ────────────────────────
 
-//   document.getElementById('judgeLayout').style.display = 'grid';
-//   if (currentTeam.abstract) {
-//     const ab = document.getElementById('abstractPreview');
-//     ab.style.display = 'block';
-//     ab.textContent = currentTeam.abstract;
-//   }
-//   if (currentTeam.github) {
-//     document.getElementById('githubLink').href = currentTeam.github;
-//   }
-//   toast(`Context loaded: ${currentTeam.name}`);
-// }
+    async function toggleAudio() {
+      isAudioActive = !isAudioActive;
+      const btn = document.getElementById('audioToggle');
+      const dot = document.getElementById('recDot');
 
-// ── REAL Juwi Audio & AI Integration ────────────────────────
+      if (isAudioActive) {
+        btn.innerHTML = '<i class="ti ti-player-stop"></i> Stop Audio';
+        btn.classList.add('pulse-btn');
+        dot.className = 'rec-dot active';
 
-async function toggleAudio() {
-  isAudioActive = !isAudioActive;
-  const btn = document.getElementById('audioToggle');
-  const dot = document.getElementById('recDot');
+        // Clear the fake data
+        document.getElementById('attackFeed').innerHTML = '';
+        document.getElementById('bsDetail').textContent = "Listening for technical claims...";
 
-  if (isAudioActive) {
-    btn.innerHTML = '<i class="ti ti-player-stop"></i> Stop Audio';
-    btn.classList.add('pulse-btn');
-    dot.className = 'rec-dot active';
+        toast('Live audio activated. Juwi is listening.', 'success');
+        await setupAudio();
+      } else {
+        btn.innerHTML = '<i class="ti ti-microphone"></i> Enable Live Audio';
+        btn.classList.remove('pulse-btn');
+        dot.className = 'rec-dot inactive';
 
-    // Clear the fake data
-    document.getElementById('attackFeed').innerHTML = '';
-    document.getElementById('bsDetail').textContent = "Listening for technical claims...";
-
-    toast('Live audio activated. Juwi is listening.', 'success');
-    await setupAudio();
-  } else {
-    btn.innerHTML = '<i class="ti ti-microphone"></i> Enable Live Audio';
-    btn.classList.remove('pulse-btn');
-    dot.className = 'rec-dot inactive';
-
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      mediaRecorder.stop();
-    }
-    toast('Audio stopped.');
-  }
-}
-
-async function setupAudio() {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  mediaRecorder = new MediaRecorder(stream);
-
-  audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  analyser = audioContext.createAnalyser();
-  microphone = audioContext.createMediaStreamSource(stream);
-  microphone.connect(analyser);
-
-  analyser.fftSize = 512;
-  const bufferLength = analyser.frequencyBinCount;
-  const dataArray = new Uint8Array(bufferLength);
-
-  mediaRecorder.onstart = () => { chunkStartTime = Date.now(); };
-  mediaRecorder.ondataavailable = event => {
-    if (event.data.size > 0) audioChunks.push(event.data);
-  };
-
-  mediaRecorder.onstop = async () => {
-    if (audioChunks.length === 0) return;
-    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-    audioChunks = [];
-
-    if (isAudioActive) {
-      mediaRecorder.start();
-    }
-    sendToJuwiEngine(audioBlob);
-  };
-
-  function checkSilence() {
-    if (!isAudioActive) return;
-
-    analyser.getByteFrequencyData(dataArray);
-    let sum = dataArray.reduce((a, b) => a + b, 0);
-    let averageVolume = sum / bufferLength;
-
-    if (averageVolume > SILENCE_THRESHOLD) {
-      if (!isSpeaking) {
-        isSpeaking = true;
-        document.getElementById('bsDetail').textContent = "🗣️ Student is speaking...";
-        if (mediaRecorder.state === 'inactive') mediaRecorder.start();
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+        }
+        toast('Audio stopped.');
       }
-      clearTimeout(silenceTimer);
-    } else {
-      if (isSpeaking) {
-        silenceTimer = setTimeout(() => {
-          let timeElapsed = Date.now() - chunkStartTime;
-          if (timeElapsed > MIN_CHUNK_TIME) {
-            isSpeaking = false;
-            document.getElementById('bsDetail').textContent = "⏸️ Checking facts against GitHub...";
-            if (mediaRecorder.state === 'recording') mediaRecorder.stop();
+    }
+
+    async function setupAudio() {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioContext.createAnalyser();
+      microphone = audioContext.createMediaStreamSource(stream);
+      microphone.connect(analyser);
+
+      analyser.fftSize = 512;
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      mediaRecorder.onstart = () => { chunkStartTime = Date.now(); };
+      mediaRecorder.ondataavailable = event => {
+        if (event.data.size > 0) audioChunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        if (audioChunks.length === 0) return;
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        audioChunks = [];
+
+        if (isAudioActive) {
+          mediaRecorder.start();
+        }
+        sendToJuwiEngine(audioBlob);
+      };
+
+      function checkSilence() {
+        if (!isAudioActive) return;
+
+        analyser.getByteFrequencyData(dataArray);
+        let sum = dataArray.reduce((a, b) => a + b, 0);
+        let averageVolume = sum / bufferLength;
+
+        if (averageVolume > SILENCE_THRESHOLD) {
+          if (!isSpeaking) {
+            isSpeaking = true;
+            document.getElementById('bsDetail').textContent = "🗣️ Student is speaking...";
+            if (mediaRecorder.state === 'inactive') mediaRecorder.start();
           }
-        }, SILENCE_DURATION);
+          clearTimeout(silenceTimer);
+        } else {
+          if (isSpeaking) {
+            silenceTimer = setTimeout(() => {
+              let timeElapsed = Date.now() - chunkStartTime;
+              if (timeElapsed > MIN_CHUNK_TIME) {
+                isSpeaking = false;
+                document.getElementById('bsDetail').textContent = "⏸️ Checking facts against GitHub...";
+                if (mediaRecorder.state === 'recording') mediaRecorder.stop();
+              }
+            }, SILENCE_DURATION);
+          }
+        }
+        requestAnimationFrame(checkSilence);
+      }
+      checkSilence();
+    }
+
+    async function sendToJuwiEngine(audioBlob) {
+      const formData = new FormData();
+      formData.append("file", audioBlob, "chunk.wav");
+
+      // Pass the actual Team's GitHub URL dynamically!
+      if (currentTeam && currentTeam.github) {
+        formData.append("github_url", currentTeam.github);
+      }
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/process-audio", {
+          method: "POST",
+          body: formData
+        });
+        const data = await response.json();
+
+        if (data.status === "success") {
+          renderAIDataToUI(data);
+        }
+      } catch (error) {
+        console.error("Juwi API Error:", error);
+        document.getElementById('bsDetail').textContent = "Failed to reach Juwi Backend.";
       }
     }
-    requestAnimationFrame(checkSilence);
-  }
-  checkSilence();
-}
 
-async function sendToJuwiEngine(audioBlob) {
-  const formData = new FormData();
-  formData.append("file", audioBlob, "chunk.wav");
+    function renderAIDataToUI(data) {
+      // 1. ALWAYS reset the UI status first so it never gets stuck!
+      document.getElementById('bsDetail').textContent = "Listening for technical claims...";
 
-  // Pass the actual Team's GitHub URL dynamically!
-  if (currentTeam && currentTeam.github) {
-    formData.append("github_url", currentTeam.github);
-  }
+      // 2. Safely grab the feed element
+      const feed = document.getElementById('attackFeed');
 
-  try {
-    const response = await fetch("http://127.0.0.1:8000/process-audio", {
-      method: "POST",
-      body: formData
-    });
-    const data = await response.json();
-
-    if (data.status === "success") {
-      renderAIDataToUI(data);
-    }
-  } catch (error) {
-    console.error("Juwi API Error:", error);
-    document.getElementById('bsDetail').textContent = "Failed to reach Juwi Backend.";
-  }
-}
-
-function renderAIDataToUI(data) {
-  // 1. ALWAYS reset the UI status first so it never gets stuck!
-  document.getElementById('bsDetail').textContent = "Listening for technical claims...";
-
-  // 2. Safely grab the feed element
-  const feed = document.getElementById('attackFeed');
-
-  // 3. Show the raw transcript so the Judge knows the mic is working!
-  if (data.transcript && data.transcript.trim() !== "") {
-    feed.innerHTML = `
+      // 3. Show the raw transcript so the Judge knows the mic is working!
+      if (data.transcript && data.transcript.trim() !== "") {
+        feed.innerHTML = `
       <div class="attack-item" style="background: var(--surface-2); border-left: 2px solid var(--text-3); margin-bottom: 12px;">
         <strong>🎙️ Heard:</strong> <span style="font-style: italic; color: var(--text-2);">"${data.transcript}"</span>
       </div>
     ` + feed.innerHTML;
-  }
+      }
 
-  // 4. If the AI didn't find any fact-checkable claims, stop here.
-  if (!data.verified_claims || data.verified_claims.length === 0) {
-    return;
-  }
+      // 4. If the AI didn't find any fact-checkable claims, stop here.
+      if (!data.verified_claims || data.verified_claims.length === 0) {
+        return;
+      }
 
-  // 5. Process the claims if they exist
-  let attacksHTML = "";
-  let totalClaims = data.verified_claims.length;
-  let trueCount = 0;
+      // 5. Process the claims if they exist
+      let attacksHTML = "";
+      let totalClaims = data.verified_claims.length;
+      let trueCount = 0;
 
-  data.verified_claims.forEach(vc => {
-    let icon = '⚠️'; let color = 'var(--text-3)';
+      data.verified_claims.forEach(vc => {
+        let icon = '⚠️'; let color = 'var(--text-3)';
 
-    if (vc.verdict === 'TRUE') {
-      icon = '✅'; color = 'var(--success)'; trueCount++;
-    } else if (vc.verdict === 'FALSE' || vc.verdict === 'EXAGGERATED') {
-      icon = '❌'; color = 'var(--danger)';
-    }
+        if (vc.verdict === 'TRUE') {
+          icon = '✅'; color = 'var(--success)'; trueCount++;
+        } else if (vc.verdict === 'FALSE' || vc.verdict === 'EXAGGERATED') {
+          icon = '❌'; color = 'var(--danger)';
+        }
 
-    attacksHTML += `
+        attacksHTML += `
         <div class="attack-item" style="border-left: 3px solid ${color}; margin-bottom: 12px;">
             <strong>${icon} [${vc.verdict}] CLAIM: "${vc.claim}"</strong>
             <span style="display:block; margin-top:4px;">🤖 <span style="color:var(--text-2);">${vc.explanation}</span></span>
         </div>`;
-  });
+      });
 
-  // 6. Update the B.S. Meter!
-  let truthScore = Math.round((trueCount / totalClaims) * 100);
-  document.getElementById('bsBar').style.width = truthScore + '%';
-  document.getElementById('bsScore').textContent = truthScore + '% Valid';
+      // 6. Update the B.S. Meter!
+      let truthScore = Math.round((trueCount / totalClaims) * 100);
+      document.getElementById('bsBar').style.width = truthScore + '%';
+      document.getElementById('bsScore').textContent = truthScore + '% Valid';
 
-  if (truthScore < 50) {
-    document.getElementById('bsBar').style.background = 'var(--danger)';
-    document.getElementById('bsDetail').textContent = "High B.S. detected! Ask the attack questions below.";
-  } else {
-    document.getElementById('bsBar').style.background = 'linear-gradient(90deg,var(--success),var(--accent-3))';
-    document.getElementById('bsDetail').textContent = "Claims appear mostly consistent with codebase.";
-  }
+      if (truthScore < 50) {
+        document.getElementById('bsBar').style.background = 'var(--danger)';
+        document.getElementById('bsDetail').textContent = "High B.S. detected! Ask the attack questions below.";
+      } else {
+        document.getElementById('bsBar').style.background = 'linear-gradient(90deg,var(--success),var(--accent-3))';
+        document.getElementById('bsDetail').textContent = "Claims appear mostly consistent with codebase.";
+      }
 
-  // 7. Append new claims to the feed below the transcript
-  feed.innerHTML = attacksHTML + feed.innerHTML;
-}
-
-// ── END REAL Juwi Integration ────────────────────────
-
-function generateProsCons() {
-  const tid = currentTeam ? currentTeam.id : 3;
-  const pc = PROS_CONS[tid] || { pros: '• Strong concept\n• Good presentation', cons: '• Limited testing\n• Scalability not addressed' };
-  document.getElementById('prosBox').style.whiteSpace = 'pre-line';
-  document.getElementById('consBox').style.whiteSpace = 'pre-line';
-  document.getElementById('prosBox').textContent = pc.pros;
-  document.getElementById('consBox').textContent = pc.cons;
-  toast('Pros & Cons generated!', 'success');
-}
-
-async function submitScore() {
-  if (!currentTeam) { toast('Load a team first.', 'danger'); return; }
-
-  // Use the new recalcTotal() function that includes the time penalty!
-  const finalTotal = recalcTotal();
-  const remarks = document.getElementById('remarksBox').value;
-
-  // Package up all the judge's hard work into a JSON payload
-  const payload = {
-    teamId: currentTeam.id,
-    teamName: currentTeam.name,
-    scores: scores,
-    total: finalTotal, // <--- Saves the strictly penalized score!
-    remarks: remarks,
-    pros: document.getElementById('prosBox').textContent,
-    cons: document.getElementById('consBox').textContent
-  };
-
-  try {
-    // Send the payload to the FastAPI backend!
-    const response = await fetch("http://127.0.0.1:8000/submit-score", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (response.ok) {
-      toast(`✓ Score securely submitted for ${currentTeam.name}!`, 'success');
-
-      // Still save to localStorage just as a backup for the frontend
-      const saved = JSON.parse(localStorage.getItem('juwi_scores') || '{}');
-      saved[currentTeam.id] = { ...payload, timestamp: new Date().toISOString() };
-      localStorage.setItem('juwi_scores', JSON.stringify(saved));
+      // 7. Append new claims to the feed below the transcript
+      feed.innerHTML = attacksHTML + feed.innerHTML;
     }
-  } catch (error) {
-    console.error("Score submission failed:", error);
-    toast("Backend error: Could not save score.", "danger");
-  }
-}
+
+    // ── END REAL Juwi Integration ────────────────────────
+
+    function generateProsCons() {
+      const tid = currentTeam ? currentTeam.id : 3;
+      const pc = PROS_CONS[tid] || { pros: '• Strong concept\n• Good presentation', cons: '• Limited testing\n• Scalability not addressed' };
+      document.getElementById('prosBox').style.whiteSpace = 'pre-line';
+      document.getElementById('consBox').style.whiteSpace = 'pre-line';
+      document.getElementById('prosBox').textContent = pc.pros;
+      document.getElementById('consBox').textContent = pc.cons;
+      toast('Pros & Cons generated!', 'success');
+    }
+
+    async function submitScore() {
+      if (!currentTeam) { toast('Load a team first.', 'danger'); return; }
+
+      // Use the new recalcTotal() function that includes the time penalty!
+      const finalTotal = recalcTotal();
+      const remarks = document.getElementById('remarksBox').value;
+
+      // Package up all the judge's hard work into a JSON payload
+      const payload = {
+        teamId: currentTeam.id,
+        teamName: currentTeam.name,
+        scores: scores,
+        total: finalTotal, // <--- Saves the strictly penalized score!
+        remarks: remarks,
+        pros: document.getElementById('prosBox').textContent,
+        cons: document.getElementById('consBox').textContent
+      };
+
+      try {
+        // Send the payload to the FastAPI backend!
+        const response = await fetch("http://127.0.0.1:8000/submit-score", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          toast(`✓ Score securely submitted for ${currentTeam.name}!`, 'success');
+
+          // Still save to localStorage just as a backup for the frontend
+          const saved = JSON.parse(localStorage.getItem('juwi_scores') || '{}');
+          saved[currentTeam.id] = { ...payload, timestamp: new Date().toISOString() };
+          localStorage.setItem('juwi_scores', JSON.stringify(saved));
+        }
+      } catch (error) {
+        console.error("Score submission failed:", error);
+        toast("Backend error: Could not save score.", "danger");
+      }
+    }
 
 
-// ── PDF Slide Analysis & Markdown Parsing ────────────────────────
+    // ── PDF Slide Analysis & Markdown Parsing ────────────────────────
 
-async function analyzeSlides(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+    async function analyzeSlides(event) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-  const modal = document.getElementById('slideModal');
-  const resultDiv = document.getElementById('slideAnalysisResult');
+      const modal = document.getElementById('slideModal');
+      const resultDiv = document.getElementById('slideAnalysisResult');
 
-  // Open modal in loading state
-  modal.style.display = 'flex';
-  resultDiv.innerHTML = `
+      // Open modal in loading state
+      modal.style.display = 'flex';
+      resultDiv.innerHTML = `
     <div style="text-align:center; padding: 40px;">
       <i class="ti ti-loader" style="font-size: 2.5rem; color: var(--accent); animation: spin 1s linear infinite;"></i>
       <h3 style="margin-top: 16px;">Juwi is reading the PDF...</h3>
@@ -616,59 +657,59 @@ async function analyzeSlides(event) {
     </div>
   `;
 
-  // Inject spin animation if it doesn't exist
-  if (!document.getElementById('spin-style')) {
-    const style = document.createElement('style');
-    style.id = 'spin-style';
-    style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
-    document.head.appendChild(style);
-  }
+      // Inject spin animation if it doesn't exist
+      if (!document.getElementById('spin-style')) {
+        const style = document.createElement('style');
+        style.id = 'spin-style';
+        style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
+        document.head.appendChild(style);
+      }
 
-  const formData = new FormData();
-  formData.append("file", file);
+      const formData = new FormData();
+      formData.append("file", file);
 
-  try {
-    const response = await fetch("http://127.0.0.1:8000/analyze-slides", {
-      method: "POST",
-      body: formData
-    });
+      try {
+        const response = await fetch("http://127.0.0.1:8000/analyze-slides", {
+          method: "POST",
+          body: formData
+        });
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if (data.status === "success") {
-      resultDiv.innerHTML = parseMarkdown(data.slide_analysis);
-      toast('Slide analysis complete!', 'success');
-    } else if (data.status === "error" && data.message.includes("SECURITY")) {
-      // Handle the Security Firewall rejection beautifully
-      resultDiv.innerHTML = `
+        if (data.status === "success") {
+          resultDiv.innerHTML = parseMarkdown(data.slide_analysis);
+          toast('Slide analysis complete!', 'success');
+        } else if (data.status === "error" && data.message.includes("SECURITY")) {
+          // Handle the Security Firewall rejection beautifully
+          resultDiv.innerHTML = `
         <div style="background: rgba(220, 53, 69, 0.1); border-left: 4px solid var(--danger); padding: 20px; border-radius: var(--radius-sm);">
           <h3 style="color: var(--danger); margin-bottom: 8px;"><i class="ti ti-shield-x"></i> Security Alert</h3>
           <p>${data.message}</p>
         </div>
       `;
-      toast('Security threat detected.', 'danger');
-    } else {
-      resultDiv.innerHTML = `<p style="color: var(--text-3); text-align:center; margin-top: 20px;">${data.message}</p>`;
+          toast('Security threat detected.', 'danger');
+        } else {
+          resultDiv.innerHTML = `<p style="color: var(--text-3); text-align:center; margin-top: 20px;">${data.message}</p>`;
+        }
+      } catch (error) {
+        console.error("PDF Analysis Error:", error);
+        resultDiv.innerHTML = `<div style="color: var(--danger); text-align:center;">Failed to reach the AI backend. Check if Python is running.</div>`;
+      }
+
+      // Reset the file input so you can upload the same file again if needed
+      event.target.value = '';
     }
-  } catch (error) {
-    console.error("PDF Analysis Error:", error);
-    resultDiv.innerHTML = `<div style="color: var(--danger); text-align:center;">Failed to reach the AI backend. Check if Python is running.</div>`;
-  }
 
-  // Reset the file input so you can upload the same file again if needed
-  event.target.value = '';
-}
-
-// Lightweight Markdown Parser
-function parseMarkdown(md) {
-  let html = md;
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--text);">$1</strong>');
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  html = html.replace(/^\* (.*$)/gim, '<li style="margin-bottom: 6px;">$1</li>');
-  html = html.replace(/^\d+\.\s(.*$)/gim, '<li style="margin-bottom: 6px;">$1</li>');
-  html = html.replace(/\n/g, '<br>');
-  return `<div style="font-family: system-ui, sans-serif;">${html}</div>`;
-}
+    // Lightweight Markdown Parser
+    function parseMarkdown(md) {
+      let html = md;
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--text);">$1</strong>');
+      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      html = html.replace(/^\* (.*$)/gim, '<li style="margin-bottom: 6px;">$1</li>');
+      html = html.replace(/^\d+\.\s(.*$)/gim, '<li style="margin-bottom: 6px;">$1</li>');
+      html = html.replace(/\n/g, '<br>');
+      return `<div style="font-family: system-ui, sans-serif;">${html}</div>`;
+    }
 
 // ── Init ──────────────────────────────────────────────────────
 initPhase();
