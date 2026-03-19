@@ -1,13 +1,17 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
 import json
+import os
 import requests
-from ddgs import DDGS
+from duckduckgo_search import DDGS
 from openai import OpenAI
 from typing import Dict, Optional
 
 class LiveFactChecker:
     def __init__(self):
         self.client = OpenAI(
-            base_url="http://localhost:1234/v1",
+            base_url=os.environ.get("LLM_BASE_URL", "http://localhost:1234/v1"),
             api_key="lm-studio"
         )
 
@@ -145,6 +149,7 @@ if __name__ == "__main__":
 
 
 # import json
+import os
 # from ddgs import DDGS #duckduckgo search
 # from openai import OpenAI
 # from typing import Dict
@@ -153,7 +158,7 @@ if __name__ == "__main__":
 #     def __init__(self):
 #         # Connect to your local Qwen model
 #         self.client = OpenAI(
-#             base_url="http://localhost:1234/v1",
+#             base_url=os.environ.get("LLM_BASE_URL", "http://localhost:1234/v1"),
 #             api_key="lm-studio"
 #         )
 

@@ -1,4 +1,8 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
 import json
+import os
 from openai import OpenAI
 from typing import Dict, Any
 
@@ -6,7 +10,7 @@ class LLMArchitectureGrader:
     def __init__(self):
         # Connect to your local LM Studio instance running Qwen
         self.client = OpenAI(
-            base_url="http://localhost:1234/v1",
+            base_url=os.environ.get("LLM_BASE_URL", "http://localhost:1234/v1"),
             api_key="lm-studio"
         )
 
@@ -26,21 +30,24 @@ class LLMArchitectureGrader:
         - Has CI/CD Pipeline: {github_facts.get('has_enterprise_ci_cd', False)}
         """
 
-        system_prompt = """You are a strict, veteran Cloud Architect judging a hackathon.
-        Review the project's pitch and its verified GitHub facts.
-        Score the project's technical architecture and execution difficulty from 0 to 40 points.
-        
-        SCORING RUBRIC:
-        0-10: Basic UI, no real backend, mostly vaporware or static files.
-        11-20: Standard CRUD app, basic API wrapper, simple execution.
-        21-30: Solid full-stack app, custom logic, real database integration.
-        31-40: Enterprise-grade execution, advanced infrastructure, complex ML, or massive codebase.
+        system_prompt = """You are a Cloud Architect scoring a hackathon project.
+Score the technical architecture from 0 to 40. Use the exact number that fits — do NOT round to multiples of 5 or 10.
 
-        Output ONLY valid JSON in this exact format, with no markdown formatting or extra text:
-        {
-            "architecture_score": 0,
-            "justification": "A strict 2-sentence explanation of why it earned this score."
-        }"""
+SCORING SIGNALS (combine these to find the exact score):
+- Static/no backend: 0-8
+- Basic CRUD or simple API wrapper: 9-18  
+- Custom logic + real DB + auth: 19-28
+- Advanced infra, ML pipeline, or large codebase: 29-40
+
+ADJUST the score up or down by 1-5 points based on:
+- Code quality and repo size (+/- points)
+- Number of integrations (+1 per meaningful one)
+- Complexity of the problem being solved (+/- points)
+
+Your score MUST reflect these adjustments. Never output a multiple of 5.
+
+Output ONLY this JSON, no markdown:
+{"architecture_score": 0, "justification": "2 sentences max."}"""
 
         try:
             response = self.client.chat.completions.create(

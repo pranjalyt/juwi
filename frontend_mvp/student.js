@@ -284,7 +284,7 @@ async function submitForm() {
         <div class="submit-success reveal">
           <div style="font-size:3rem;margin-bottom:20px;color:var(--accent);"><i class="ti ti-rocket"></i></div>
           <h2 style="margin-bottom:12px;">Project Submitted!</h2>
-          <p style="max-width:400px;margin-inline:auto;">Your project was received and evaluated by the AI Judge. Score: <strong style="color:var(--accent);">${data.team.score}</strong></p>
+          <p style="max-width:400px;margin-inline:auto;">Your project was received and evaluated by the AI Judge Score: <strong style="color:var(--accent);">${data.team.score}</strong></p>
           <div style="margin-top:32px;background:var(--surface-2);border-radius:var(--radius-sm);padding:20px;max-width:360px;margin-inline:auto;">
             <p style="font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">Submission ID</p>
             <code style="font-size:1.1rem;color:var(--accent);font-weight:700;">#JW-${payload.id}</code>
@@ -486,9 +486,9 @@ function renderPhase2Results() {
     // Use phase2 score if available, otherwise fall back to phase1 score
     const hasPhase2 = team.phase2_total !== null && team.phase2_total !== undefined;
     const displayScore = hasPhase2 ? team.phase2_total : (team.score ?? '—');
-    const scoreLabel  = hasPhase2 ? '/50 pts' : 'phase 1 pts';
+    const scoreLabel = hasPhase2 ? '/50 pts' : 'phase 1 pts';
 
-    const rankStr    = rankLabels[idx];
+    const rankStr = rankLabels[idx];
     const bannerText = tplRaw
       .replace('[Team]', team.name)
       .replace('[Rank]', rankStr)
